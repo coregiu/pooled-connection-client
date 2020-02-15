@@ -10,7 +10,10 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.InputStream;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -79,10 +82,69 @@ public class SftpImplTest {
     }
 
     @Test
+    public void should_successfully_when_upload_file() throws ConnectionException{
+        byte[] input = "Go go go, fire in the hole".getBytes();
+        InputStream inputStream = new BufferedInputStream(new ByteArrayInputStream(input));
+        sftpConnection.upload(sftpConnection.currentDirectory(), "huawei.txt", inputStream);
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/huawei.txt"), is(true));
+
+        byte[] download = sftpConnection.download(sftpConnection.currentDirectory(), "huawei.txt");
+        assertThat(new String(input).equals(new String(download)), is(true));
+
+        sftpConnection.deleteFile(sftpConnection.currentDirectory(), "huawei.txt");
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/huawei.txt"), is(false));
+    }
+
+    @Test
+    public void should_successfully_when_download_file() throws ConnectionException{
+        byte[] input = "Go go go, fire in the hole".getBytes();
+        InputStream inputStream = new BufferedInputStream(new ByteArrayInputStream(input));
+        sftpConnection.upload(sftpConnection.currentDirectory(), "huawei.txt", inputStream);
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/huawei.txt"), is(true));
+
+        byte[] download = sftpConnection.download(sftpConnection.currentDirectory(), "huawei.txt");
+        assertThat(new String(input).equals(new String(download)), is(true));
+
+        sftpConnection.deleteFile(sftpConnection.currentDirectory(), "huawei.txt");
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/huawei.txt"), is(false));
+    }
+
+    @Test
+    public void should_return_true_when_file_exists() throws ConnectionException{
+        byte[] input = "Go go go, fire in the hole".getBytes();
+        InputStream inputStream = new BufferedInputStream(new ByteArrayInputStream(input));
+        sftpConnection.upload(sftpConnection.currentDirectory(), "huawei.txt", inputStream);
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/huawei.txt"), is(true));
+
+        byte[] download = sftpConnection.download(sftpConnection.currentDirectory(), "huawei.txt");
+        assertThat(new String(input).equals(new String(download)), is(true));
+
+        sftpConnection.deleteFile(sftpConnection.currentDirectory(), "huawei.txt");
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/huawei.txt"), is(false));
+    }
+
+    @Test
+    public void should_successfully_when_delete_exists_file() throws ConnectionException{
+        byte[] input = "Go go go, fire in the hole".getBytes();
+        InputStream inputStream = new BufferedInputStream(new ByteArrayInputStream(input));
+        sftpConnection.upload(sftpConnection.currentDirectory(), "huawei.txt", inputStream);
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/huawei.txt"), is(true));
+
+        byte[] download = sftpConnection.download(sftpConnection.currentDirectory(), "huawei.txt");
+        assertThat(new String(input).equals(new String(download)), is(true));
+
+        sftpConnection.deleteFile(sftpConnection.currentDirectory(), "huawei.txt");
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/huawei.txt"), is(false));
+    }
+
+    @Test
     public void should_successfully_when_delete_exists_directory() throws ConnectionException{
         String path = sftpConnection.currentDirectory() + "/" + "huawei";
         sftpConnection.mkdirs(path);
         assertThat(sftpConnection.isDirectory(path), is(true));
+
+        sftpConnection.deleteDirectory(path);
+        assertThat(sftpConnection.isDirectory(path), is(false));
     }
 
     @After
