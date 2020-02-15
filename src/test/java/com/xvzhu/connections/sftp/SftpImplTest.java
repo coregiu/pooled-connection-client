@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
@@ -23,8 +24,9 @@ public class SftpImplTest {
     private static final Logger LOG = LoggerFactory.getLogger(SftpImplTest.class);
     private SftpServer sftpServer;
     private ISftpConnection sftpConnection;
+
     @Before
-    public void sftpImplTest() throws InterruptedException{
+    public void sftpImplTest() throws InterruptedException {
         LOG.error("Begin to start server.");
         sftpServer = new SftpServer();
         try {
@@ -43,31 +45,48 @@ public class SftpImplTest {
     }
 
     @Test
-    public void should_return_current_directory_when_query_pwd() {
-        try {
-            File file = new File("");
-            LOG.error("current file : {}", file.getAbsolutePath());
-            LOG.error("Sftp path is : {}", sftpConnection.currentDirectory());
-            String localFilePath = file.getAbsolutePath().replace("\\", "").replace("/", "");
-            String sftpFilePath = sftpConnection.currentDirectory().replace("\\", "").replace("/", "");
-            assertThat(localFilePath, is(sftpFilePath));
-        } catch (ConnectionException e) {
-            LOG.error("Failed to query path", e);
-        }
+    public void should_return_current_directory_when_query_pwd() throws ConnectionException{
+        File file = new File("");
+        LOG.error("current file : {}", file.getAbsolutePath());
+        LOG.error("Sftp path is : {}", sftpConnection.currentDirectory());
+        String localFilePath = file.getAbsolutePath().replace("\\", "").replace("/", "");
+        String sftpFilePath = sftpConnection.currentDirectory().replace("\\", "").replace("/", "");
+        assertThat(localFilePath, is(sftpFilePath));
     }
 
     @Test
-    public void should_return_true_when_check_current_directory_is_directory() {
-        try {
-            LOG.error("Sftp path is : {}", sftpConnection.currentDirectory());
-            assertThat(sftpConnection.isDirectory(sftpConnection.currentDirectory()), is(true));
-        } catch (ConnectionException e) {
-            LOG.error("Failed to query path", e);
-        }
+    public void should_return_true_when_check_current_directory_is_directory() throws ConnectionException{
+        LOG.error("Sftp path is : {}", sftpConnection.currentDirectory());
+        assertThat(sftpConnection.isDirectory(sftpConnection.currentDirectory()), is(true));
+    }
+
+    @Test
+    public void should_return_false_when_check_not_exists_directory() throws ConnectionException{
+        String path = sftpConnection.currentDirectory() + "/" + "huawei";
+        sftpConnection.mkdirs(path);
+        assertThat(sftpConnection.isDirectory(path), is(true));
+        sftpConnection.deleteDirectory(path);
+        assertThat(sftpConnection.isDirectory(path), is(false));
+    }
+
+    @Test
+    public void should_mkdir_when_dir_not_exists() throws ConnectionException{
+        String path = sftpConnection.currentDirectory() + "/" + "huawei";
+        sftpConnection.mkdirs(path);
+        assertThat(sftpConnection.isDirectory(path), is(true));
+        sftpConnection.deleteDirectory(path);
+        assertThat(sftpConnection.isDirectory(path), is(false));
+    }
+
+    @Test
+    public void should_successfully_when_delete_exists_directory() throws ConnectionException{
+        String path = sftpConnection.currentDirectory() + "/" + "huawei";
+        sftpConnection.mkdirs(path);
+        assertThat(sftpConnection.isDirectory(path), is(true));
     }
 
     @After
-    public void shutdownSftp(){
+    public void shutdownSftp() {
         LOG.error("Begin to shutdown server.");
         sftpServer.shutdown();
     }

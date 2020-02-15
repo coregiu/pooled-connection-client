@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -32,6 +31,8 @@ import java.util.List;
 public class SftpImpl implements ISftpConnection {
     private static final Logger LOG = LoggerFactory.getLogger(SftpImpl.class);
     private static final int BYTE_DEFAULT_SIZE = 4096;
+    private static final String SEPARATOR = "/";
+
     private ChannelSftp channelSftp;
 
     @Override
@@ -69,7 +70,7 @@ public class SftpImpl implements ISftpConnection {
             LOG.error("The directory: {} is not existed!", dir);
             throw new ConnectionException(String.format("The directory: %s is not existed!", dir));
         }
-        String filePath = dir + File.separator + name;
+        String filePath = dir + SEPARATOR + name;
         if (!isExist(filePath)) {
             LOG.error("The file: {} is not existed!", filePath);
             throw new ConnectionException(String.format("The file: %s is not existed!", filePath));
@@ -120,7 +121,7 @@ public class SftpImpl implements ISftpConnection {
             LOG.error("Directory not exists!");
             return;
         }
-        String filePath = dir + File.separator + name;
+        String filePath = dir + SEPARATOR + name;
         if (!isExist(filePath)) {
             LOG.error("File not exists!");
             return;
@@ -136,22 +137,21 @@ public class SftpImpl implements ISftpConnection {
 
     @Override
     public void mkdirs(@NonNull String dir) throws ConnectionException {
-        String[] folders = dir.split(File.separator);
         try {
-            String loopPath = File.separator;
-            channelSftp.cd(loopPath);
-            for (String folder : folders) {
-                if (folder.trim().equals("")) {
-                    continue;
-                }
-                loopPath += File.separator + folder;
-                if (isExist(loopPath)) {
-                    channelSftp.mkdir(folder);
-                    channelSftp.cd(folder);
-                } else {
-                    channelSftp.cd(folder);
-                }
+            if (isDirectory(dir)) {
+                LOG.info("The directory is exists!");
+                return;
             }
+            int separatorPos = dir.lastIndexOf(SEPARATOR);
+            if (separatorPos == 0) {
+                channelSftp.mkdir(dir);
+                channelSftp.cd(dir);
+                return;
+            }
+            String preDir = dir.substring(0, dir.lastIndexOf(SEPARATOR));
+            mkdirs(preDir);
+            channelSftp.mkdir(dir);
+            channelSftp.cd(dir);
         } catch (SftpException e) {
             LOG.error("Failed to create directory！");
             throw new ConnectionException("Failed to create directory");

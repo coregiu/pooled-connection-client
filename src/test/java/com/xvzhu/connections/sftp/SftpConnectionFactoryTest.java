@@ -5,5 +5,5 @@ package com.xvzhu.connections.sftp;
  * @version V1.0
  * @since Date : 2020-02-16 0:39
  */
-public class SftpConnectionFacotryTest {
+public class SftpConnectionFactoryTest {
 }
