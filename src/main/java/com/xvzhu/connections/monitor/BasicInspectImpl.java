@@ -3,7 +3,7 @@ package com.xvzhu.connections.monitor;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.IInspect;
-import com.xvzhu.connections.apis.IObserver;
+import lombok.NonNull;
 
 /**
  * @author : xvzhu
@@ -12,12 +12,12 @@ import com.xvzhu.connections.apis.IObserver;
  */
 public class BasicInspectImpl implements IInspect {
     @Override
-    public void inspect(IConnectionManager connectionManager, ConnectionBean connectionBean) {
+    public void inspect(@NonNull IConnectionManager connectionManager, @NonNull ConnectionBean connectionBean) {
 
     }
 
     @Override
-    public void inspect(IConnectionManager connectionManager) {
+    public void inspect() {
 
     }
 }

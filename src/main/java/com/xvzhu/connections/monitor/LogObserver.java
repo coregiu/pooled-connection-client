@@ -3,6 +3,7 @@ package com.xvzhu.connections.monitor;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.IObserver;
+import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +23,7 @@ public class LogObserver implements IObserver {
      * @param connectionManager the connection manager
      */
     @Override
-    public void visit(IConnectionManager connectionManager, ConnectionBean connectionBean) {
+    public void visit(@NonNull IConnectionManager connectionManager, @NonNull ConnectionBean connectionBean) {
         LOG.warn("Begin to inspect the connection manager: {}, {}", connectionBean.getHost(), Thread.currentThread());
     }
 

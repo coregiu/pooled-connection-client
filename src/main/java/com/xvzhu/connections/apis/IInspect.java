@@ -19,7 +19,6 @@ public interface IInspect {
     /**
      * <p>Inspect the manager, close the connection if it's timed out or closed.</p>
      *
-     * @param connectionManager the connection manager
      */
-    void inspect(IConnectionManager connectionManager);
+    void inspect();
 }

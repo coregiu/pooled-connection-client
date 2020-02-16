@@ -4,6 +4,9 @@ import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.IConnectionMonitor;
 import com.xvzhu.connections.apis.IObserver;
+import lombok.NonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +26,7 @@ import java.util.concurrent.TimeUnit;
  * @since Date : 2020-02-15 14:22
  */
 public class ConnectionMonitor implements IConnectionMonitor {
+    private static Logger LOG = LoggerFactory.getLogger(ConnectionMonitor.class);
     private static final int DEFAULT_OBSERVERS = 2;
     private static final long DEFAULT_INTERVAL_TIME_SECOND = 60L;
     private static class ConnectionMonitorHolder {
@@ -32,6 +36,7 @@ public class ConnectionMonitor implements IConnectionMonitor {
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
+            LOG.info("Begin to inspect the mangers by schedule thread.");
             Thread scheduledThread = new Thread();
             scheduledThread.setName("Connection-Monitor-Thread");
             return scheduledThread;
@@ -86,7 +91,7 @@ public class ConnectionMonitor implements IConnectionMonitor {
      *
      * @param observer the observer
      */
-    public void attach(IObserver observer) {
+    public void attach(@NonNull IObserver observer) {
         observers.add(observer);
     }
 
@@ -97,7 +102,8 @@ public class ConnectionMonitor implements IConnectionMonitor {
      * @param connectionManager the connection manager
      * @param connectionBean    the connection bean
      */
-    public void notifyObservers(IConnectionManager connectionManager, ConnectionBean connectionBean) {
+    public void notifyObservers(@NonNull IConnectionManager connectionManager, @NonNull ConnectionBean connectionBean) {
+        LOG.info("Begin to inspect the connection by notify.");
         for (IObserver observer : observers) {
             observer.visit(connectionManager, connectionBean);
         }

@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Each host, thread has a connection.<Br>
  * See the connection {@link ISftpConnection}
  *
+ * @param <T> the connection type parameter.
  * @author : xvzhu
  * @version V1.0
  * @since Date : 2020-02-15 14:22
@@ -59,6 +60,13 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
     @Builder.Default
     private long intervalTimeSecond = DEFAULT_SCHEDULE_INTERVAL_TIME_SECOND;
 
+    /**
+     * Borrow connection t.
+     *
+     * @param connectionBean the connection bean
+     * @return the t
+     * @throws ConnectionException the connection exception
+     */
     @Override
     public T borrowConnection(ConnectionBean connectionBean) throws ConnectionException {
         connectionMonitor.notifyObservers(this, connectionBean);
@@ -77,6 +85,12 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
         }
     }
 
+    /**
+     * Release connection.
+     *
+     * @param connectionBean the connection bean
+     * @throws ConnectionException the connection exception
+     */
     @Override
     public void releaseConnection(ConnectionBean connectionBean) throws ConnectionException {
         connectionMonitor.notifyObservers(this, connectionBean);
@@ -101,6 +115,12 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
         }
     }
 
+    /**
+     * Close connection.
+     *
+     * @param connectionBean the connection bean
+     * @throws ConnectionException the connection exception
+     */
     @Override
     public void closeConnection(ConnectionBean connectionBean) throws ConnectionException {
         connectionMonitor.notifyObservers(this, connectionBean);
@@ -133,11 +153,22 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
         }
     }
 
+    /**
+     * Accept.
+     *
+     * @param observer       the observer
+     * @param connectionBean the connection bean
+     */
     @Override
     public void accept(IObserver observer, ConnectionBean connectionBean) {
         observer.visit(this, connectionBean);
     }
 
+    /**
+     * Attach.
+     *
+     * @param observer the observer
+     */
     @Override
     public void attach(IObserver observer) {
         connectionMonitor.attach(observer);
@@ -182,6 +213,9 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
         }
     }
 
+    /**
+     * The type Manager bean.
+     */
     @Data
     @Builder
     static class ManagerBean {

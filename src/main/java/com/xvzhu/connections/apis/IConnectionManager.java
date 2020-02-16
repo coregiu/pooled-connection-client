@@ -3,6 +3,7 @@ package com.xvzhu.connections.apis;
 /**
  * Manager API.
  *
+ * @param <T> the type parameter
  * @author : xvzhu
  * @version V1.0
  * @since Date : 2020-02-15 14:22
