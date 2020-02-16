@@ -156,11 +156,11 @@ public class BasicSftpClientConnectionManager implements IConnectionManager {
         }
     }
 
-    private IConnection getAndRegisterNewConnection(ConnectionBean connectionBean) {
+    private IConnection getAndRegisterNewConnection(ConnectionBean connectionBean) throws ConnectionException {
         ManagerBean managerBean;
         synchronized (this) {
-            ISftpConnection connection =
-                    SftpConnectionFactory.builder().connectionBean(connectionBean).build().create();
+            ISftpConnection connection = null;
+//                    SftpConnectionFactory.builder().set(connectionBean).build().create();
             timeOutMilli =
                     timeOutMilli > 0 && timeOutMilli < MAX_TIME_OUT_MILLI ? DEFAULT_TIME_OUT_MILLI : timeOutMilli;
             managerBean = ManagerBean.builder()

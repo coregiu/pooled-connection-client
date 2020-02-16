@@ -6,7 +6,9 @@ import com.xvzhu.connections.apis.ISftpConnection;
 import com.xvzhu.connections.mockserver.SftpServer;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +16,7 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.util.List;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -25,11 +28,13 @@ import static org.junit.Assert.assertThat;
  */
 public class SftpImplTest {
     private static final Logger LOG = LoggerFactory.getLogger(SftpImplTest.class);
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
     private SftpServer sftpServer;
     private ISftpConnection sftpConnection;
 
     @Before
-    public void sftpImplTest() throws InterruptedException {
+    public void sftpImplTest() throws InterruptedException, ConnectionException {
         LOG.error("Begin to start server.");
         sftpServer = new SftpServer();
         try {
@@ -44,7 +49,14 @@ public class SftpImplTest {
         }
         Thread.sleep(10);
         ConnectionBean connectionBean = new ConnectionBean("127.0.0.1", 2222, "huawei", "huawei");
-        sftpConnection = SftpConnectionFactory.builder().connectionBean(connectionBean).build().create();
+        sftpConnection = SftpConnectionFactory.builder().setConnectionBean(connectionBean).build().create();
+    }
+
+    @After
+    public void shutdownSftp() {
+        LOG.error("Begin to shutdown server.");
+        sftpServer.shutdown();
+        sftpConnection.getChannelSftp().disconnect();
     }
 
     @Test
@@ -85,7 +97,7 @@ public class SftpImplTest {
     public void should_make_nested_dir_when_dir_not_exists() throws ConnectionException{
         String parentPath = sftpConnection.currentDirectory() + "/com";
         String deepPath = parentPath + "/huawei";
-        
+
         sftpConnection.mkdirs(deepPath);
         assertThat(sftpConnection.isDirectory(deepPath), is(true));
         sftpConnection.deleteDirectory(deepPath);
@@ -160,9 +172,49 @@ public class SftpImplTest {
         assertThat(sftpConnection.isDirectory(path), is(false));
     }
 
-    @After
-    public void shutdownSftp() {
-        LOG.error("Begin to shutdown server.");
-        sftpServer.shutdown();
+    @Test
+    public void should_successfully_when_input_correct_name_to_change() throws ConnectionException{
+        String currentPath = sftpConnection.currentDirectory();
+        String path = currentPath + "/huawei";
+        sftpConnection.mkdirs(path);
+        assertThat(sftpConnection.isDirectory(path), is(true));
+        String pathNew = currentPath + "/com";
+        sftpConnection.rename(path, pathNew);
+        assertThat(sftpConnection.isDirectory(pathNew), is(true));
+
+        sftpConnection.deleteDirectory(pathNew);
+        assertThat(sftpConnection.isDirectory(pathNew), is(false));
+    }
+
+    @Test
+    public void should_failed_when_input_wrong_name_to_change() throws ConnectionException{
+        expectedException.expect(ConnectionException.class);
+        expectedException.expectMessage("Failed to rename the file!");
+        String currentPath = sftpConnection.currentDirectory();
+        String path = currentPath + "/huawei";
+        String pathNew = currentPath + "/com";
+        sftpConnection.rename(path, pathNew);
+    }
+
+    @Test
+    public void should_return_files_when_list_file() throws ConnectionException{
+        byte[] input = "Go go go, fire in the hole".getBytes();
+        InputStream inputStream = new BufferedInputStream(new ByteArrayInputStream(input));
+        String path = sftpConnection.currentDirectory() + "/huawei";
+        sftpConnection.mkdirs(path);
+        assertThat(sftpConnection.isExist(path), is(true));
+
+        sftpConnection.upload(path, "huawei.txt", inputStream);
+        assertThat(sftpConnection.isFile(sftpConnection.currentDirectory() + "/huawei.txt"), is(true));
+
+        List<String> files = sftpConnection.list(sftpConnection.currentDirectory());
+        // conaint . and .. path.
+        assertThat(files.size(), is(3));
+
+        sftpConnection.deleteFile(path, "huawei.txt");
+        assertThat(sftpConnection.isExist(path + "/huawei.txt"), is(false));
+
+        sftpConnection.deleteDirectory(path);
+        assertThat(sftpConnection.isExist(path), is(false));
     }
 }

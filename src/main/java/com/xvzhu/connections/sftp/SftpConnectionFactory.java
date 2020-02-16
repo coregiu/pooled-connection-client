@@ -4,21 +4,15 @@ import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
-import com.jcraft.jsch.SftpException;
 import com.xvzhu.connections.apis.ConnectionBean;
+import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.ISftpConnection;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.apache.commons.pool2.BasePooledObjectFactory;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
-
 import java.util.Properties;
-import java.util.concurrent.CompletionException;
 
 /**
  * The type Sftp connection factory.
@@ -27,30 +21,77 @@ import java.util.concurrent.CompletionException;
  * @version V1.0
  * @since Date : 2020-02-15 16:13
  */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class SftpConnectionFactory extends BasePooledObjectFactory<ISftpConnection> {
     private static final Logger LOG = LoggerFactory.getLogger(SftpConnectionFactory.class);
     private static final String CHANNEL_TYPE = "sftp";
     private static Properties sshConfig = new Properties();
+    private JSch jsch = new JSch();
     private ConnectionBean connectionBean;
+    private Session sshSession;
 
     static {
         sshConfig.put("StrictHostKeyChecking", "no");
     }
 
     /**
-     * Create sftp connection.
+     * The type Sftp connection factory builder.
+     */
+    public static class SftpConnectionFactoryBuilder {
+        private ConnectionBean connectionBean;
+
+        /**
+         * Sets connection bean.
+         *
+         * @param connectionBean the connection bean
+         * @return the connection bean
+         */
+        public SftpConnectionFactoryBuilder setConnectionBean(ConnectionBean connectionBean) {
+            this.connectionBean = connectionBean;
+            return this;
+        }
+
+        /**
+         * Build sftp connection factory.
+         *
+         * @return the sftp connection factory
+         */
+        public SftpConnectionFactory build() {
+            return new SftpConnectionFactory(connectionBean);
+        }
+    }
+
+    /**
+     * Builder sftp connection factory builder.
+     *
+     * @return the sftp connection factory builder
+     */
+    public static SftpConnectionFactoryBuilder builder() {
+        return new SftpConnectionFactoryBuilder();
+    }
+
+    private SftpConnectionFactory(ConnectionBean connectionBean) {
+        this.connectionBean = connectionBean;
+    }
+
+    /**
+     * Build sftp connection factory.
+     *
+     * @return the sftp connection factory
+     */
+    public SftpConnectionFactory build() {
+        return new SftpConnectionFactory(connectionBean);
+    }
+
+    /**
+     * <p>Create sftp connection.</p>
      *
      * @return the sftp connection
+     * @throws ConnectionException the connection exception
      */
     @Override
-    public ISftpConnection create() {
+    public ISftpConnection create() throws ConnectionException {
         try {
-            JSch jsch = new JSch();
-            Session sshSession = jsch.getSession(connectionBean.getUsername(),
+            sshSession = jsch.getSession(connectionBean.getUsername(),
                     connectionBean.getHost(),
                     connectionBean.getPort());
             sshSession.setPassword(connectionBean.getPassword());
@@ -60,58 +101,58 @@ public class SftpConnectionFactory extends BasePooledObjectFactory<ISftpConnecti
             channel.connect();
             return new SftpImpl(channel);
         } catch (JSchException e) {
-            throw new CompletionException("Failed to connect the ftp server", e);
+            LOG.error("Failed to create connection");
+            throw new ConnectionException("Failed to connect the ftp server", e);
         }
     }
 
     /**
-     * Wrap pooled object.
+     * <p>Wrap pooled object.</p>
      *
-     * @param sftp the sftp
+     * @param connection the sftp
      * @return the pooled object
      */
     @Override
-    public PooledObject<ISftpConnection> wrap(ISftpConnection sftp) {
-        return new DefaultPooledObject<>(sftp);
+    public PooledObject<ISftpConnection> wrap(ISftpConnection connection) {
+        return new DefaultPooledObject<>(connection);
     }
 
     /**
-     * Destroy object.
+     * <p>Close the connection.</p>
      *
-     * @param p the p
+     * @param connectionPool the connection pool.
      */
     @Override
-    public void destroyObject(PooledObject<ISftpConnection> p) {
-        if (p != null) {
-            ISftpConnection sftp = p.getObject();
-            if (sftp != null) {
-                ChannelSftp channelSftp = sftp.getChannelSftp();
-                if (channelSftp != null) {
-                    channelSftp.disconnect();
-                }
+    public void destroyObject(PooledObject<ISftpConnection> connectionPool) {
+        if (connectionPool == null) {
+            LOG.warn("The connection pool is null");
+            return;
+        }
+        ISftpConnection sftp = connectionPool.getObject();
+        if (sftp != null) {
+            ChannelSftp channelSftp = sftp.getChannelSftp();
+            if (channelSftp != null) {
+                channelSftp.disconnect();
             }
+        }
+        if (sshSession != null) {
+            sshSession.disconnect();
         }
     }
 
     /**
-     * Validate object boolean.
+     * <p>Validate the connection is connected.</p>
      *
-     * @param p the p
+     * @param connectionPool the the connection pool.
      * @return the boolean
      */
     @Override
-    public boolean validateObject(PooledObject<ISftpConnection> p) {
-        if (p != null) {
-            ISftpConnection sftp = p.getObject();
-            if (sftp != null) {
-                try {
-                    sftp.getChannelSftp().pwd();
-                    return true;
-                } catch (SftpException e) {
-                    return false;
-                }
-            }
+    public boolean validateObject(PooledObject<ISftpConnection> connectionPool) {
+        if (connectionPool == null) {
+            LOG.warn("The connection pool is null");
+            return false;
         }
-        return false;
+        ISftpConnection sftp = connectionPool.getObject();
+        return (sftp != null) && (!sftp.getChannelSftp().isClosed());
     }
 }
