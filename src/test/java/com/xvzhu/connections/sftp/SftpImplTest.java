@@ -17,6 +17,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -47,7 +48,6 @@ public class SftpImplTest {
         } catch (Exception e) {
             LOG.error("Failed to init test.", e);
         }
-        Thread.sleep(10);
         ConnectionBean connectionBean = new ConnectionBean("127.0.0.1", 2222, "huawei", "huawei");
         sftpConnection = SftpConnectionFactory.builder().connectionBean(connectionBean).build().create();
     }

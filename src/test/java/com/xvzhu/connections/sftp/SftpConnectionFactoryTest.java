@@ -43,7 +43,6 @@ public class SftpConnectionFactoryTest {
         } catch (Exception e) {
             LOG.error("Failed to init test.", e);
         }
-        Thread.sleep(10);
     }
 
     @After
