@@ -65,7 +65,7 @@ public class SftpImplTest {
 
     @Test
     public void should_return_false_when_check_not_exists_directory() throws ConnectionException{
-        String path = sftpConnection.currentDirectory() + "/" + "huawei";
+        String path = sftpConnection.currentDirectory() + "/huawei";
         sftpConnection.mkdirs(path);
         assertThat(sftpConnection.isDirectory(path), is(true));
         sftpConnection.deleteDirectory(path);
@@ -74,11 +74,24 @@ public class SftpImplTest {
 
     @Test
     public void should_mkdir_when_dir_not_exists() throws ConnectionException{
-        String path = sftpConnection.currentDirectory() + "/" + "huawei";
+        String path = sftpConnection.currentDirectory() + "/huawei";
         sftpConnection.mkdirs(path);
         assertThat(sftpConnection.isDirectory(path), is(true));
         sftpConnection.deleteDirectory(path);
         assertThat(sftpConnection.isDirectory(path), is(false));
+    }
+
+    @Test
+    public void should_make_nested_dir_when_dir_not_exists() throws ConnectionException{
+        String parentPath = sftpConnection.currentDirectory() + "/com";
+        String deepPath = parentPath + "/huawei";
+        
+        sftpConnection.mkdirs(deepPath);
+        assertThat(sftpConnection.isDirectory(deepPath), is(true));
+        sftpConnection.deleteDirectory(deepPath);
+        assertThat(sftpConnection.isDirectory(deepPath), is(false));
+        sftpConnection.deleteDirectory(parentPath);
+        assertThat(sftpConnection.isDirectory(parentPath), is(false));
     }
 
     @Test
@@ -139,7 +152,7 @@ public class SftpImplTest {
 
     @Test
     public void should_successfully_when_delete_exists_directory() throws ConnectionException{
-        String path = sftpConnection.currentDirectory() + "/" + "huawei";
+        String path = sftpConnection.currentDirectory() + "/huawei";
         sftpConnection.mkdirs(path);
         assertThat(sftpConnection.isDirectory(path), is(true));
 
