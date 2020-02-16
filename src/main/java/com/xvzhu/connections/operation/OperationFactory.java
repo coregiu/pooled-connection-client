@@ -5,6 +5,8 @@ import com.xvzhu.connections.BasicSftpClientConnectionManager;
 import com.xvzhu.connections.apis.ConnectionConst;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionManagerConfig;
+import com.xvzhu.connections.apis.ISftpConnection;
+import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +29,12 @@ public class OperationFactory {
 
     private ConnectionManagerConfig config;
 
-    public OperationFactory(ConnectionManagerConfig connectionManagerConfig) {
+    /**
+     * Instantiates a new Operation factory.
+     *
+     * @param connectionManagerConfig the connection manager config
+     */
+    public OperationFactory(@NonNull ConnectionManagerConfig connectionManagerConfig) {
         this.config = connectionManagerConfig;
     }
 
@@ -38,6 +45,40 @@ public class OperationFactory {
      */
     public Consumer<Map.Entry<ConnectionBean, Map<Thread, BasicSftpClientConnectionManager.ManagerBean>>> getReleaseConsumer() {
         return entry -> releaseSftpConnection(entry.getKey(), entry.getValue());
+    }
+
+    /**
+     * Release a connection.
+     *
+     * @param managerBean the manager bean
+     */
+    public void releaseAConnection(@NonNull BasicSftpClientConnectionManager.ManagerBean managerBean) {
+        managerBean.setReleaseTime(Calendar.getInstance().getTimeInMillis());
+        managerBean.setConnectionBorrowed(false);
+    }
+
+    /**
+     * Close a connection.
+     *
+     * @param thread            the thread
+     * @param hostConnectionMap the host connection map
+     */
+    public void closeAConnection(@NonNull Thread thread,
+                                 @NonNull Map<Thread, BasicSftpClientConnectionManager.ManagerBean> hostConnectionMap) {
+        try {
+            BasicSftpClientConnectionManager.ManagerBean managerBean = hostConnectionMap.get(thread);
+            // double check.
+            if (managerBean == null) {
+                LOG.info("Then thread {} 's connection has been closed!", thread);
+                return;
+            }
+            ISftpConnection connection = managerBean.getSftpConnection();
+            connection.getChannelSftp().disconnect();
+            hostConnectionMap.remove(Thread.currentThread());
+            connection.getChannelSftp().getSession().disconnect();
+        } catch (JSchException e) {
+            LOG.error("Failed to close the connection", e);
+        }
     }
 
     private void releaseSftpConnection(ConnectionBean connectionBean,
@@ -106,23 +147,6 @@ public class OperationFactory {
             closeAConnection(releaseThread, hostConnectionMap);
         } else {
             LOG.info("Do nothing");
-        }
-    }
-
-    private void releaseAConnection(BasicSftpClientConnectionManager.ManagerBean managerBean) {
-        managerBean.setReleaseTime(Calendar.getInstance().getTimeInMillis());
-        managerBean.setConnectionBorrowed(false);
-    }
-
-    private void closeAConnection(Thread thread,
-                                  Map<Thread, BasicSftpClientConnectionManager.ManagerBean> hostConnectionMap) {
-        try {
-            BasicSftpClientConnectionManager.ManagerBean managerBean = hostConnectionMap.get(thread);
-            managerBean.getSftpConnection().getChannelSftp().disconnect();
-            managerBean.getSftpConnection().getChannelSftp().getSession().disconnect();
-            hostConnectionMap.remove(thread);
-        } catch (JSchException e) {
-            LOG.error("Failed to close the connection", e);
         }
     }
 }

@@ -86,15 +86,17 @@ public class SftpConnectionFactory extends BasePooledObjectFactory<ISftpConnecti
             return;
         }
         ISftpConnection sftp = connectionPool.getObject();
-        if (sftp != null) {
-            ChannelSftp channelSftp = sftp.getChannelSftp();
-            if (channelSftp != null) {
-                channelSftp.disconnect();
-                try {
-                    channelSftp.getSession().disconnect();
-                } catch (JSchException e) {
-                    LOG.error("Failed to close the session", e);
-                }
+        if (sftp == null) {
+            LOG.warn("The sftp is null");
+            return;
+        }
+        ChannelSftp channelSftp = sftp.getChannelSftp();
+        if (channelSftp != null) {
+            channelSftp.disconnect();
+            try {
+                channelSftp.getSession().disconnect();
+            } catch (JSchException e) {
+                LOG.error("Failed to close the session", e);
             }
         }
     }

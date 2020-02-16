@@ -64,15 +64,6 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
     }
 
     /**
-     * Get the parameters of static configurations.
-     *
-     * @return the max connection size
-     */
-    public static ConnectionManagerConfig getConnectionManagerConfig() {
-        return connectionManagerConfig;
-    }
-
-    /**
      * Gets operation factory.
      *
      * @return the operation factory
@@ -91,14 +82,14 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
     @Override
     public T borrowConnection(ConnectionBean connectionBean) throws ConnectionException {
         connectionMonitor.notifyObservers(this, connectionBean);
-        Map<Thread, ManagerBean> threadLocal = connections.get(connectionBean);
-        if (null == threadLocal) {
+        Map<Thread, ManagerBean> threadManagerBeanMap = connections.get(connectionBean);
+        if (null == threadManagerBeanMap) {
             LOG.info("Then host {}, thread {} 's do not has any connections!",
                     connectionBean.getHost(),
                     Thread.currentThread().getName());
             return getAndRegisterNewConnection(connectionBean);
         }
-        ManagerBean managerBean = threadLocal.get(Thread.currentThread());
+        ManagerBean managerBean = threadManagerBeanMap.get(Thread.currentThread());
         if (null != managerBean) {
             return reuseConnection(connectionBean, managerBean);
         } else {
@@ -113,17 +104,17 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
      * @throws ConnectionException the connection exception
      */
     @Override
-    public void releaseConnection(ConnectionBean connectionBean) throws ConnectionException {
+    public void releaseConnection(ConnectionBean connectionBean) {
         connectionMonitor.notifyObservers(this, connectionBean);
-        Map<Thread, ManagerBean> threadLocal = connections.get(connectionBean);
-        if (null == threadLocal) {
+        Map<Thread, ManagerBean> threadManagerBeanMap = connections.get(connectionBean);
+        if (null == threadManagerBeanMap) {
             LOG.info("Then host {}, thread {} 's do not has any connections!",
                     connectionBean.getHost(),
                     Thread.currentThread().getName());
             return;
         }
 
-        ManagerBean managerBean = threadLocal.get(Thread.currentThread());
+        ManagerBean managerBean = threadManagerBeanMap.get(Thread.currentThread());
         if (null == managerBean) {
             LOG.info("Then host {}, thread {} 's connection has been closed!",
                     connectionBean.getHost(),
@@ -131,8 +122,7 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
             return;
         }
         synchronized (managerBean.getLock()) {
-            managerBean.setConnectionBorrowed(false);
-            managerBean.setReleaseTime(Calendar.getInstance().getTimeInMillis());
+            operationFactory.releaseAConnection(managerBean);
         }
     }
 
@@ -143,17 +133,17 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
      * @throws ConnectionException the connection exception
      */
     @Override
-    public void closeConnection(ConnectionBean connectionBean) throws ConnectionException {
+    public void closeConnection(ConnectionBean connectionBean) {
         connectionMonitor.notifyObservers(this, connectionBean);
-        Map<Thread, ManagerBean> threadLocal = connections.get(connectionBean);
-        if (null == threadLocal) {
+        Map<Thread, ManagerBean> threadManagerBeanMap = connections.get(connectionBean);
+        if (null == threadManagerBeanMap) {
             LOG.info("Then host {}, thread {} 's do not has any connections!",
                     connectionBean.getHost(),
                     Thread.currentThread().getName());
             return;
         }
 
-        ManagerBean managerBean = threadLocal.get(Thread.currentThread());
+        ManagerBean managerBean = threadManagerBeanMap.get(Thread.currentThread());
         if (null == managerBean) {
             LOG.info("Then host {}, thread {} 's connection has been closed!",
                     connectionBean.getHost(),
@@ -161,16 +151,7 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
             return;
         }
         synchronized (managerBean.getLock()) {
-            // double check.
-            if (connections.get(connectionBean).get(Thread.currentThread()) == null) {
-                LOG.info("Then host {}, thread {} 's connection has been closed!",
-                        connectionBean.getHost(),
-                        Thread.currentThread().getName());
-                return;
-            }
-            ISftpConnection connection = managerBean.getSftpConnection();
-            connection.getChannelSftp().disconnect();
-            connections.get(connectionBean).remove(Thread.currentThread());
+            operationFactory.closeAConnection(Thread.currentThread(), threadManagerBeanMap);
         }
     }
 
