@@ -17,14 +17,15 @@ import org.slf4j.LoggerFactory;
  */
 public class InspectObserver implements IObserver, Runnable {
     private static Logger LOG = LoggerFactory.getLogger(InspectObserver.class);
-    IInspect basicInspect = new BasicInspectImpl();
-    IInspect pooledInspect = new PooledInspectImpl();
+    private IInspect basicInspect = new BasicInspectImpl();
+    private IInspect pooledInspect = new PooledInspectImpl();
+
     @Override
     public void visit(@NonNull IConnectionManager connectionManager, @NonNull  ConnectionBean connectionBean) {
         if (connectionManager instanceof BasicSftpClientConnectionManager) {
-            basicInspect.inspect(connectionManager, connectionBean);
+            basicInspect.inspect(connectionBean);
         } else if (connectionManager instanceof PooledSftpClientConnectionManager){
-            pooledInspect.inspect(connectionManager, connectionBean);
+            pooledInspect.inspect(connectionBean);
         }
     }
 

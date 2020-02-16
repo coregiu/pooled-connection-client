@@ -12,7 +12,7 @@ import lombok.NonNull;
  */
 public class PooledInspectImpl implements IInspect {
     @Override
-    public void inspect(@NonNull IConnectionManager connectionManager, @NonNull ConnectionBean connectionBean) {
+    public void inspect(@NonNull ConnectionBean connectionBean) {
 
     }
 

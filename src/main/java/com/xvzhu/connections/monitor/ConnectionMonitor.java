@@ -77,7 +77,7 @@ public class ConnectionMonitor implements IConnectionMonitor {
         this.intervalTimeSecond = intervalTimeSecond;
     }
 
-     /**
+    /**
      * Gets instance.
      *
      * @return the instance

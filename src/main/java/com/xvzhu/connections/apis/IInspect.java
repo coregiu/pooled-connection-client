@@ -1,5 +1,9 @@
 package com.xvzhu.connections.apis;
 
+import lombok.NonNull;
+
+import java.util.Map;
+
 /**
  * The interface Inspect.
  *
@@ -11,14 +15,12 @@ public interface IInspect {
     /**
      * <p>Inspect the connection, close the connection if it's timed out or closed.</p>
      *
-     * @param connectionManager the connection manager
-     * @param connectionBean    the connection bean
+     * @param connectionBean the connection bean
      */
-    void inspect(IConnectionManager connectionManager, ConnectionBean connectionBean);
+    void inspect(@NonNull ConnectionBean connectionBean);
 
     /**
      * <p>Inspect the manager, close the connection if it's timed out or closed.</p>
-     *
      */
     void inspect();
 }

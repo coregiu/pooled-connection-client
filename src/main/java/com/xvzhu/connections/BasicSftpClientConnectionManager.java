@@ -9,7 +9,6 @@ import com.xvzhu.connections.apis.IObserver;
 import com.xvzhu.connections.apis.ISftpConnection;
 import com.xvzhu.connections.monitor.ConnectionMonitor;
 import com.xvzhu.connections.sftp.SftpConnectionFactory;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.slf4j.Logger;
@@ -29,12 +28,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version V1.0
  * @since Date : 2020-02-15 14:22
  */
-@Builder
-@AllArgsConstructor
 public class BasicSftpClientConnectionManager<T extends IConnection> implements IConnectionManager {
     private static final Logger LOG = LoggerFactory.getLogger(BasicSftpClientConnectionManager.class);
-    private static final int DEFAULT_CONNECTION_SIZE = 8;
-    private static final int DEFAULT_TIME_OUT_MILLI = 15000;
+    private static final int DEFAULT_MAX_CONNECTION_SIZE = 8;
+    private static final int DEFAULT_REUSE_TIME_OUT_MILLI = 15000;
+    private static final int DEFAULT_CLOSE_TIME_OUT_MILLI = 60000;
     private static final long DEFAULT_SCHEDULE_INTERVAL_TIME_SECOND = 60L;
     private static final int MAX_TIME_OUT_MILLI = 3600000;
 
@@ -43,22 +41,59 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
      * Static container for monitor all connections for each host, thread.
      */
     private static Map<ConnectionBean, ThreadLocal<ManagerBean>> connections
-            = new ConcurrentHashMap<>(DEFAULT_CONNECTION_SIZE);
+            = new ConcurrentHashMap<>(DEFAULT_MAX_CONNECTION_SIZE);
 
     private static IConnectionMonitor connectionMonitor = ConnectionMonitor.getInstance();
 
-    private BasicSftpClientConnectionManager() {
+    /**
+     * The max size of connections all of current process(ClassLoader).
+     */
+    private static int maxConnectionSize = DEFAULT_MAX_CONNECTION_SIZE;
+    /**
+     * Connection close timeout configuration.
+     * Default is 60 seconds.
+     * If time out, close the connection.
+     */
+    private int timeoutMilliSecond = DEFAULT_CLOSE_TIME_OUT_MILLI;
+    /**
+     * Connection reuse timeout configuration.
+     * Default is 15 seconds.
+     * If time out, release the connection to reuse.
+     */
+    private int reuseTimeoutMilliSecond = DEFAULT_REUSE_TIME_OUT_MILLI;
+    /**
+     * The interval of schedule(Second).
+     */
+    private long intervalTimeSecond = DEFAULT_SCHEDULE_INTERVAL_TIME_SECOND;
+
+    private BasicSftpClientConnectionManager(int maxConnectionSize,
+                                            int timeoutMilliSecond,
+                                            int reuseTimeoutMilliSecond,
+                                            long intervalTimeSecond) {
+        this.timeoutMilliSecond = timeoutMilliSecond;
+        this.reuseTimeoutMilliSecond = reuseTimeoutMilliSecond;
+        this.intervalTimeSecond = intervalTimeSecond;
+        BasicSftpClientConnectionManager.maxConnectionSize = maxConnectionSize;
         connectionMonitor.setIntervalTimeSecond(intervalTimeSecond);
     }
 
     /**
-     * Connection timeout.
-     * Default is 10 seconds.
+     * Get connections container.
+     *
+     * @return the connections
      */
-    @Builder.Default
-    private int timeoutMilliSecond = DEFAULT_TIME_OUT_MILLI;
-    @Builder.Default
-    private long intervalTimeSecond = DEFAULT_SCHEDULE_INTERVAL_TIME_SECOND;
+    public static Map<ConnectionBean, ThreadLocal<ManagerBean>> getConnections() {
+        return connections;
+    }
+
+    /**
+     * Gets max size of all connections limit.
+     *
+     * @return the max connection size
+     */
+    public static int getMaxConnectionSize() {
+        return maxConnectionSize;
+    }
 
     /**
      * Borrow connection t.
@@ -187,7 +222,7 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
             managerBean.setBorrowTime(Calendar.getInstance().getTimeInMillis());
             LOG.debug("Reuse the connection for host {}, thread {}",
                     connectionBean.getHost(), Thread.currentThread().getName());
-            return (T)managerBean.getSftpConnection();
+            return (T) managerBean.getSftpConnection();
         }
     }
 
@@ -199,11 +234,16 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
                             .connectionBean(connectionBean)
                             .timeoutMilliSecond(timeoutMilliSecond).build().create();
             timeoutMilliSecond =
-                    timeoutMilliSecond > 0 && timeoutMilliSecond < MAX_TIME_OUT_MILLI ? DEFAULT_TIME_OUT_MILLI : timeoutMilliSecond;
+                    timeoutMilliSecond > 0 && timeoutMilliSecond < MAX_TIME_OUT_MILLI ?
+                            DEFAULT_CLOSE_TIME_OUT_MILLI : timeoutMilliSecond;
+            reuseTimeoutMilliSecond =
+                    reuseTimeoutMilliSecond > 0 && reuseTimeoutMilliSecond < MAX_TIME_OUT_MILLI ?
+                            DEFAULT_REUSE_TIME_OUT_MILLI : reuseTimeoutMilliSecond;
             managerBean = ManagerBean.builder()
                     .isConnectionBorrowed(true)
                     .sftpConnection(connection)
-                    .timeOutMilli(timeoutMilliSecond).build();
+                    .timeOutMilli(timeoutMilliSecond)
+                    .reuseTimeOutMilli(reuseTimeoutMilliSecond).build();
             ThreadLocal<ManagerBean> managerBeanThreadLocal = new ThreadLocal<>();
             managerBeanThreadLocal.set(managerBean);
             connections.put(connectionBean, managerBeanThreadLocal);
@@ -218,16 +258,109 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
      */
     @Data
     @Builder
-    static class ManagerBean {
+    public static class ManagerBean {
         @Builder.Default
         private Object lock = new Object();
         private ISftpConnection sftpConnection;
         @Builder.Default
-        private long timeOutMilli = DEFAULT_TIME_OUT_MILLI;
+        private long timeOutMilli = DEFAULT_CLOSE_TIME_OUT_MILLI;
+        @Builder.Default
+        private long reuseTimeOutMilli = DEFAULT_REUSE_TIME_OUT_MILLI;
         @Builder.Default
         private long borrowTime = Calendar.getInstance().getTimeInMillis();
         private long releaseTime;
         @Builder.Default
         private boolean isConnectionBorrowed = false;
+    }
+
+    /**
+     * Builder basic sftp client connection manager builder.
+     *
+     * @return the basic sftp client connection manager builder
+     */
+    public static BasicSftpClientConnectionManagerBuilder builder() {
+        return new BasicSftpClientConnectionManagerBuilder();
+    }
+
+    /**
+     * The type Basic sftp client connection manager builder.
+     */
+    public static class BasicSftpClientConnectionManagerBuilder {
+        /**
+         * The max size of connections all of current process(ClassLoader).
+         */
+        private int maxConnectionSize = DEFAULT_MAX_CONNECTION_SIZE;
+        /**
+         * Connection close timeout configuration.
+         * Default is 60 seconds.
+         * If time out, close the connection.
+         */
+        private int timeoutMilliSecond = DEFAULT_CLOSE_TIME_OUT_MILLI;
+        /**
+         * Connection reuse timeout configuration.
+         * Default is 15 seconds.
+         * If time out, release the connection to reuse.
+         */
+        private int reuseTimeoutMilliSecond = DEFAULT_REUSE_TIME_OUT_MILLI;
+        /**
+         * The interval of schedule(Second).
+         */
+        private long intervalTimeSecond = DEFAULT_SCHEDULE_INTERVAL_TIME_SECOND;
+
+        /**
+         * Sets max connection size.
+         *
+         * @param maxConnectionSize the max connection size
+         * @return the max connection size
+         */
+        public BasicSftpClientConnectionManagerBuilder setMaxConnectionSize(int maxConnectionSize) {
+            this.maxConnectionSize = maxConnectionSize;
+            return this;
+        }
+
+        /**
+         * Sets timeout milli second.
+         *
+         * @param timeoutMilliSecond the timeout milli second
+         * @return the timeout milli second
+         */
+        public BasicSftpClientConnectionManagerBuilder setTimeoutMilliSecond(int timeoutMilliSecond) {
+            this.timeoutMilliSecond = timeoutMilliSecond;
+            return this;
+        }
+
+        /**
+         * Sets reuse timeout milli second.
+         *
+         * @param reuseTimeoutMilliSecond the reuse timeout milli second
+         * @return the reuse timeout milli second
+         */
+        public BasicSftpClientConnectionManagerBuilder setReuseTimeoutMilliSecond(int reuseTimeoutMilliSecond) {
+            this.reuseTimeoutMilliSecond = reuseTimeoutMilliSecond;
+            return this;
+        }
+
+        /**
+         * Sets interval time second.
+         *
+         * @param intervalTimeSecond the interval time second
+         * @return the interval time second
+         */
+        public BasicSftpClientConnectionManagerBuilder setIntervalTimeSecond(long intervalTimeSecond) {
+            this.intervalTimeSecond = intervalTimeSecond;
+            return this;
+        }
+
+        /**
+         * Build basic sftp client connection manager.
+         *
+         * @return the basic sftp client connection manager
+         */
+        public BasicSftpClientConnectionManager build() {
+            return new BasicSftpClientConnectionManager(maxConnectionSize,
+                    timeoutMilliSecond,
+                    reuseTimeoutMilliSecond,
+                    intervalTimeSecond);
+        }
     }
 }
