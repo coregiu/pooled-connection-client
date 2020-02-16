@@ -2,6 +2,7 @@ package com.xvzhu.connections;
 
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
+import com.xvzhu.connections.apis.IConnection;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.IConnectionMonitor;
 import com.xvzhu.connections.apis.IObserver;
@@ -29,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Builder
 @AllArgsConstructor
-public class BasicSftpClientConnectionManager<T> implements IConnectionManager {
+public class BasicSftpClientConnectionManager<T extends IConnection> implements IConnectionManager {
     private static final Logger LOG = LoggerFactory.getLogger(BasicSftpClientConnectionManager.class);
     private static final int DEFAULT_CONNECTION_SIZE = 8;
     private static final int DEFAULT_TIME_OUT_MILLI = 15000;

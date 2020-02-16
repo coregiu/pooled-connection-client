@@ -7,7 +7,7 @@ package com.xvzhu.connections.apis;
  * @version V1.0
  * @since Date : 2020-02-15 14:22
  */
-public interface IConnectionManager<T> {
+public interface IConnectionManager<T extends IConnection> {
     /**
      * <p>Borrow connection connection.</p>
      * If there is no connection, create a new connection, and return.<br>
