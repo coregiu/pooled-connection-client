@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version V1.0
  * @since Date : 2020-02-15 14:22
  */
+@Builder
 public class BasicSftpClientConnectionManager implements IConnectionManager {
     private static final Logger LOG = LoggerFactory.getLogger(BasicSftpClientConnectionManager.class);
     private static final int DEFAULT_CONNECTION_SIZE = 8;
@@ -42,31 +43,12 @@ public class BasicSftpClientConnectionManager implements IConnectionManager {
 
     private static IConnectionMonitor connectionMonitor = ConnectionMonitor.getInstance();
 
-    private BasicSftpClientConnectionManager(long timeOutMilli) {
-        this.timeOutMilli = timeOutMilli;
-    }
-
-    public static BasicSftpClientConnectionManagerBuilder builder() {
-        return new BasicSftpClientConnectionManagerBuilder();
-    }
-
-    public static class BasicSftpClientConnectionManagerBuilder{
-        private long timeOutMilli = DEFAULT_TIME_OUT_MILLI;
-        public BasicSftpClientConnectionManagerBuilder setTimeOutMilli(long timeOutMilli) {
-            this.timeOutMilli = timeOutMilli;
-            return this;
-        }
-        public BasicSftpClientConnectionManager build() {
-            return new BasicSftpClientConnectionManager(timeOutMilli);
-        }
-    }
-
     /**
      * Connection timeout.
      * Default is 10 seconds.
      */
+    @Builder.Default
     private long timeOutMilli = DEFAULT_TIME_OUT_MILLI;
-
 
     @Override
     public IConnection borrowConnection(ConnectionBean connectionBean) throws ConnectionException {
