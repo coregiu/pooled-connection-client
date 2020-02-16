@@ -9,6 +9,7 @@ import com.xvzhu.connections.apis.IObserver;
 import com.xvzhu.connections.apis.ISftpConnection;
 import com.xvzhu.connections.monitor.ConnectionMonitor;
 import com.xvzhu.connections.sftp.SftpConnectionFactory;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.slf4j.Logger;
@@ -28,10 +29,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since Date : 2020-02-15 14:22
  */
 @Builder
+@AllArgsConstructor
 public class BasicSftpClientConnectionManager implements IConnectionManager {
     private static final Logger LOG = LoggerFactory.getLogger(BasicSftpClientConnectionManager.class);
     private static final int DEFAULT_CONNECTION_SIZE = 8;
     private static final int DEFAULT_TIME_OUT_MILLI = 15000;
+    private static final long DEFAULT_SCHEDULE_INTERVAL_TIME_SECOND = 60L;
     private static final int MAX_TIME_OUT_MILLI = 3600000;
 
     /**
@@ -43,12 +46,18 @@ public class BasicSftpClientConnectionManager implements IConnectionManager {
 
     private static IConnectionMonitor connectionMonitor = ConnectionMonitor.getInstance();
 
+    private BasicSftpClientConnectionManager() {
+        connectionMonitor.setIntervalTimeSecond(intervalTimeSecond);
+    }
+
     /**
      * Connection timeout.
      * Default is 10 seconds.
      */
     @Builder.Default
     private int timeoutMilliSecond = DEFAULT_TIME_OUT_MILLI;
+    @Builder.Default
+    private long intervalTimeSecond = DEFAULT_SCHEDULE_INTERVAL_TIME_SECOND;
 
     @Override
     public IConnection borrowConnection(ConnectionBean connectionBean) throws ConnectionException {

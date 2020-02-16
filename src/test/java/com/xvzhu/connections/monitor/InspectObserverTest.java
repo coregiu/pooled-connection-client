@@ -9,22 +9,22 @@ import org.junit.Test;
  */
 public class InspectObserverTest {
     @Test
-    public void should_close_timed_out_connection_when_basic_connection_timed_out() {
+    public void should_schedule_close_timed_out_connection_when_basic_connection_timed_out() {
 
     }
 
     @Test
-    public void should_reset_connection_container_when_basic_connection_is_closed() {
+    public void should_schedule_reset_connection_container_when_basic_connection_is_closed() {
 
     }
 
     @Test
-    public void should_close_timed_out_connection_when_pooled_connection_timed_out() {
+    public void should_schedule_close_timed_out_connection_when_pooled_connection_timed_out() {
 
     }
 
     @Test
-    public void should_reset_connection_container_when_pooled_connection_is_closed() {
+    public void should_schedule_reset_connection_container_when_pooled_connection_is_closed() {
 
     }
 }

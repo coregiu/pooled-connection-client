@@ -57,6 +57,7 @@ public class ConnectionMonitor implements IConnectionMonitor {
      *
      * @return the interval time second
      */
+    @Override
     public long getIntervalTimeSecond() {
         return intervalTimeSecond;
     }
@@ -66,6 +67,7 @@ public class ConnectionMonitor implements IConnectionMonitor {
      *
      * @param intervalTimeSecond the interval time second
      */
+    @Override
     public void setIntervalTimeSecond(long intervalTimeSecond) {
         this.intervalTimeSecond = intervalTimeSecond;
     }
