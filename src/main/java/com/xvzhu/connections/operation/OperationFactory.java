@@ -74,7 +74,7 @@ public class OperationFactory {
             }
             ISftpConnection connection = managerBean.getSftpConnection();
             connection.getChannelSftp().disconnect();
-            hostConnectionMap.remove(Thread.currentThread());
+            hostConnectionMap.remove(thread);
             connection.getChannelSftp().getSession().disconnect();
         } catch (JSchException e) {
             LOG.error("Failed to close the connection", e);
@@ -93,7 +93,7 @@ public class OperationFactory {
                 return;
             }
             synchronized (managerBean.getLock()) {
-                releaseCurrentConnection(connectionBean, hostConnectionMap);
+                releaseCurrentConnection(hostConnectionMap);
             }
         }
     }
@@ -101,48 +101,50 @@ public class OperationFactory {
     private void releaseAllConnections(ConnectionBean connectionBean,
                                        Map<Thread, BasicSftpClientConnectionManager.ManagerBean> hostConnectionMap) {
         LOG.debug("begin to release all the connections of host: {}", connectionBean.getHost());
-        Set<Thread> reuseList = new HashSet<>(hostConnectionMap.size());
+        Set<Map.Entry<Thread, BasicSftpClientConnectionManager.ManagerBean>> reuseSet
+                = new HashSet<>(hostConnectionMap.size());
         long timeNow = Calendar.getInstance().getTimeInMillis();
         // 1. Release timed out and closed connections. Contains reuse and close time out.
         hostConnectionMap.entrySet().stream()
-                .filter(entry -> isTimedOut(timeNow, entry.getValue().isConnectionBorrowed(),
-                        entry.getValue().getBorrowTime(), config.getReuseTimeoutSecond()))
-                .forEach(entry -> reuseList.add(entry.getKey()));
-        reuseList.stream().forEach(thread -> releaseAConnection(hostConnectionMap.get(thread)));
+                .filter(entry -> entry.getValue().isConnectionBorrowed() &&
+                        isTimedOut(timeNow, entry.getValue().getBorrowTime(), config.getReuseTimeoutSecond()))
+                .forEach(entry -> reuseSet.add(entry));
+        reuseSet.stream().forEach(entry -> releaseAConnection(entry.getValue()));
 
-        Set<Thread> closeList = new HashSet<>(hostConnectionMap.size());
+        Set<Map.Entry<Thread, BasicSftpClientConnectionManager.ManagerBean>> closeSet
+                = new HashSet<>(hostConnectionMap.size());
         hostConnectionMap.entrySet().stream()
-                .filter(entry -> isTimedOut(timeNow, !entry.getValue().isConnectionBorrowed(),
-                        entry.getValue().getReleaseTime(), config.getCloseTimeoutSecond()))
-                .forEach(entry -> closeList.add(entry.getKey()));
-        closeList.stream().forEach(thread -> closeAConnection(thread, hostConnectionMap));
+                .filter(entry -> (!entry.getValue().isConnectionBorrowed()) &&
+                        isTimedOut(timeNow, entry.getValue().getReleaseTime(), config.getCloseTimeoutSecond()))
+                .forEach(entry -> closeSet.add(entry));
+        closeSet.stream().forEach(entry -> closeAConnection(entry.getKey(), hostConnectionMap));
 
         // 2. Release unused connection if connections is exceed the max size.
         int hostConnectionRemainSize = hostConnectionMap.size() - config.getMaxConnectionSize();
         if (hostConnectionRemainSize <= 0) {
             return;
         }
-        Set<Thread> clearList = new HashSet<>(hostConnectionMap.size());
+        Set<Map.Entry<Thread, BasicSftpClientConnectionManager.ManagerBean>> clearSet
+                = new HashSet<>(hostConnectionMap.size());
         hostConnectionMap.entrySet().stream()
-                .filter(entry -> !entry.getValue().isConnectionBorrowed())
-                .forEach(entry -> clearList.add(entry.getKey()));
-        closeList.stream().forEach(thread -> closeAConnection(thread, hostConnectionMap));
+                .filter(entry -> (!entry.getValue().isConnectionBorrowed()))
+                .forEach(entry -> clearSet.add(entry));
+        clearSet.stream().forEach(entry -> closeAConnection(entry.getKey(), hostConnectionMap));
     }
 
-    private boolean isTimedOut(long timeNow, boolean isBorrowed, long checkTime, int timedout) {
-        return isBorrowed && ((timeNow - checkTime) / SECOND_CONVERT_UNIT > timedout);
+    private boolean isTimedOut(long timeNow, long checkTime, int timedout) {
+        return (timeNow - checkTime) / SECOND_CONVERT_UNIT > timedout;
     }
 
-    private void releaseCurrentConnection(ConnectionBean connectionBean,
-                                          Map<Thread, BasicSftpClientConnectionManager.ManagerBean> hostConnectionMap) {
+    private void releaseCurrentConnection(Map<Thread, BasicSftpClientConnectionManager.ManagerBean> hostConnectionMap) {
         Thread releaseThread = Thread.currentThread();
         BasicSftpClientConnectionManager.ManagerBean managerBean = hostConnectionMap.get(Thread.currentThread());
         long timeNow = Calendar.getInstance().getTimeInMillis();
 
-        if (isTimedOut(timeNow, managerBean.isConnectionBorrowed(),
+        if (managerBean.isConnectionBorrowed() && isTimedOut(timeNow,
                 managerBean.getBorrowTime(), config.getReuseTimeoutSecond())) {
             releaseAConnection(managerBean);
-        } else if (isTimedOut(timeNow, !managerBean.isConnectionBorrowed(),
+        } else if ((!managerBean.isConnectionBorrowed()) && isTimedOut(timeNow,
                 managerBean.getReleaseTime(), config.getCloseTimeoutSecond())){
             closeAConnection(releaseThread, hostConnectionMap);
         } else {

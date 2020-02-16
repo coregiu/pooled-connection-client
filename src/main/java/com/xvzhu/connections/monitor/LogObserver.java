@@ -1,11 +1,15 @@
 package com.xvzhu.connections.monitor;
 
+import com.xvzhu.connections.BasicSftpClientConnectionManager;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.IObserver;
 import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The type Log observer.
@@ -25,6 +29,19 @@ public class LogObserver implements IObserver {
     @Override
     public void visit(@NonNull IConnectionManager connectionManager, @NonNull ConnectionBean connectionBean) {
         LOG.warn("Begin to inspect the connection manager: {}, {}", connectionBean.getHost(), Thread.currentThread());
+        getStatisticInfo(connectionManager).forEach((key, value) -> LOG.warn("{} : {}", key, value));
+    }
+
+    private Map<String, Object> getStatisticInfo(IConnectionManager connectionManager) {
+        Map<String, Object> statisticMap = new HashMap<>();
+        Map<ConnectionBean, Map<Thread, BasicSftpClientConnectionManager.ManagerBean>> connections =
+                BasicSftpClientConnectionManager.getConnections();
+        if (connectionManager instanceof BasicSftpClientConnectionManager) {
+            statisticMap.put("Total of host connections", connections.size());
+            connections.forEach((key, value) ->
+                    statisticMap.put("Total connection of the host-" + key.getHost(), value.size()));
+        }
+        return statisticMap;
     }
 
     @Override
