@@ -31,8 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class BasicSftpClientConnectionManager implements IConnectionManager {
     private static final Logger LOG = LoggerFactory.getLogger(BasicSftpClientConnectionManager.class);
     private static final int DEFAULT_CONNECTION_SIZE = 8;
-    private static final long DEFAULT_TIME_OUT_MILLI = 15000L;
-    private static final long MAX_TIME_OUT_MILLI = 3600000L;
+    private static final int DEFAULT_TIME_OUT_MILLI = 15000;
+    private static final int MAX_TIME_OUT_MILLI = 3600000;
 
     /**
      * monitor container.<br>
@@ -48,7 +48,7 @@ public class BasicSftpClientConnectionManager implements IConnectionManager {
      * Default is 10 seconds.
      */
     @Builder.Default
-    private long timeOutMilli = DEFAULT_TIME_OUT_MILLI;
+    private int timeoutMilliSecond = DEFAULT_TIME_OUT_MILLI;
 
     @Override
     public IConnection borrowConnection(ConnectionBean connectionBean) throws ConnectionException {
@@ -155,13 +155,15 @@ public class BasicSftpClientConnectionManager implements IConnectionManager {
         ManagerBean managerBean;
         synchronized (this) {
             ISftpConnection connection =
-                    SftpConnectionFactory.builder().setConnectionBean(connectionBean).build().create();
-            timeOutMilli =
-                    timeOutMilli > 0 && timeOutMilli < MAX_TIME_OUT_MILLI ? DEFAULT_TIME_OUT_MILLI : timeOutMilli;
+                    SftpConnectionFactory.builder()
+                            .connectionBean(connectionBean)
+                            .timeoutMilliSecond(timeoutMilliSecond).build().create();
+            timeoutMilliSecond =
+                    timeoutMilliSecond > 0 && timeoutMilliSecond < MAX_TIME_OUT_MILLI ? DEFAULT_TIME_OUT_MILLI : timeoutMilliSecond;
             managerBean = ManagerBean.builder()
                     .isConnectionBorrowed(true)
                     .sftpConnection(connection)
-                    .timeOutMilli(timeOutMilli).build();
+                    .timeOutMilli(timeoutMilliSecond).build();
             ThreadLocal<ManagerBean> managerBeanThreadLocal = new ThreadLocal<>();
             managerBeanThreadLocal.set(managerBean);
             connections.put(connectionBean, managerBeanThreadLocal);

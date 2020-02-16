@@ -49,7 +49,7 @@ public class SftpImplTest {
         }
         Thread.sleep(10);
         ConnectionBean connectionBean = new ConnectionBean("127.0.0.1", 2222, "huawei", "huawei");
-        sftpConnection = SftpConnectionFactory.builder().setConnectionBean(connectionBean).build().create();
+        sftpConnection = SftpConnectionFactory.builder().connectionBean(connectionBean).build().create();
     }
 
     @After

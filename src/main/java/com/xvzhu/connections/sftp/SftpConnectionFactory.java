@@ -7,6 +7,7 @@ import com.jcraft.jsch.Session;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.ISftpConnection;
+import lombok.Builder;
 import org.apache.commons.pool2.BasePooledObjectFactory;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
@@ -21,65 +22,22 @@ import java.util.Properties;
  * @version V1.0
  * @since Date : 2020-02-15 16:13
  */
+@Builder
 public class SftpConnectionFactory extends BasePooledObjectFactory<ISftpConnection> {
     private static final Logger LOG = LoggerFactory.getLogger(SftpConnectionFactory.class);
+    private static final int DEFAULT_TIME_OUT_MILLI = 15000;
     private static final String CHANNEL_TYPE = "sftp";
     private static Properties sshConfig = new Properties();
+    @Builder.Default
     private JSch jsch = new JSch();
-    private ConnectionBean connectionBean;
+    @Builder.Default
     private Session sshSession;
+    @Builder.Default
+    private int timeoutMilliSecond = DEFAULT_TIME_OUT_MILLI;
+    private ConnectionBean connectionBean;
 
     static {
         sshConfig.put("StrictHostKeyChecking", "no");
-    }
-
-    /**
-     * The type Sftp connection factory builder.
-     */
-    public static class SftpConnectionFactoryBuilder {
-        private ConnectionBean connectionBean;
-
-        /**
-         * Sets connection bean.
-         *
-         * @param connectionBean the connection bean
-         * @return the connection bean
-         */
-        public SftpConnectionFactoryBuilder setConnectionBean(ConnectionBean connectionBean) {
-            this.connectionBean = connectionBean;
-            return this;
-        }
-
-        /**
-         * Build sftp connection factory.
-         *
-         * @return the sftp connection factory
-         */
-        public SftpConnectionFactory build() {
-            return new SftpConnectionFactory(connectionBean);
-        }
-    }
-
-    /**
-     * Builder sftp connection factory builder.
-     *
-     * @return the sftp connection factory builder
-     */
-    public static SftpConnectionFactoryBuilder builder() {
-        return new SftpConnectionFactoryBuilder();
-    }
-
-    private SftpConnectionFactory(ConnectionBean connectionBean) {
-        this.connectionBean = connectionBean;
-    }
-
-    /**
-     * Build sftp connection factory.
-     *
-     * @return the sftp connection factory
-     */
-    public SftpConnectionFactory build() {
-        return new SftpConnectionFactory(connectionBean);
     }
 
     /**
@@ -96,6 +54,7 @@ public class SftpConnectionFactory extends BasePooledObjectFactory<ISftpConnecti
                     connectionBean.getPort());
             sshSession.setPassword(connectionBean.getPassword());
             sshSession.setConfig(sshConfig);
+            sshSession.setTimeout(timeoutMilliSecond);
             sshSession.connect();
             ChannelSftp channel = (ChannelSftp) sshSession.openChannel(CHANNEL_TYPE);
             channel.connect();

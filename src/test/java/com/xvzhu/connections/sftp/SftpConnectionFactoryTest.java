@@ -55,7 +55,7 @@ public class SftpConnectionFactoryTest {
     @Test
     public void should_successfully_when_create_connection_using_correct_info() throws ConnectionException {
         ConnectionBean connectionBean = new ConnectionBean("127.0.0.1", 2222, "huawei", "huawei");
-        ISftpConnection sftpConnection = SftpConnectionFactory.builder().setConnectionBean(connectionBean).build().create();
+        ISftpConnection sftpConnection = SftpConnectionFactory.builder().connectionBean(connectionBean).build().create();
         try {
             assertThat(sftpConnection.currentDirectory() != null, is(true));
         } finally {
@@ -68,7 +68,7 @@ public class SftpConnectionFactoryTest {
         expectedException.expect(ConnectionException.class);
         expectedException.expectMessage("Failed to connect the ftp server");
         ConnectionBean connectionBean = new ConnectionBean("127.0.0.1", 2222, "huawei", "");
-        ISftpConnection sftpConnection = SftpConnectionFactory.builder().setConnectionBean(connectionBean).build().create();
+        ISftpConnection sftpConnection = SftpConnectionFactory.builder().connectionBean(connectionBean).build().create();
         try {
             assertThat(sftpConnection.currentDirectory() != null, is(true));
         } finally {
@@ -81,7 +81,7 @@ public class SftpConnectionFactoryTest {
     @Test
     public void should_successfully_when_destroy_connection() throws ConnectionException {
         ConnectionBean connectionBean = new ConnectionBean("127.0.0.1", 2222, "huawei", "huawei");
-        SftpConnectionFactory sftpConnectionFactory = SftpConnectionFactory.builder().setConnectionBean(connectionBean).build();
+        SftpConnectionFactory sftpConnectionFactory = SftpConnectionFactory.builder().connectionBean(connectionBean).build();
         ISftpConnection sftpConnection = sftpConnectionFactory.create();
         try {
             PooledObject<ISftpConnection> connectionPool = sftpConnectionFactory.wrap(sftpConnection);
