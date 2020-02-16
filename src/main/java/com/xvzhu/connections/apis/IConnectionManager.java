@@ -7,7 +7,7 @@ package com.xvzhu.connections.apis;
  * @version V1.0
  * @since Date : 2020-02-15 14:22
  */
-public interface IConnectionManager {
+public interface IConnectionManager<T> {
     /**
      * <p>Borrow connection connection.</p>
      * If there is no connection, create a new connection, and return.<br>
@@ -17,7 +17,7 @@ public interface IConnectionManager {
      * @return the connection
      * @throws ConnectionException the connection exception
      */
-    IConnection borrowConnection(ConnectionBean connectionBean) throws ConnectionException;
+    T borrowConnection(ConnectionBean connectionBean) throws ConnectionException;
 
     /**
      * <p>Release connection.</p>

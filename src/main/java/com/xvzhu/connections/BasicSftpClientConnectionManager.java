@@ -2,7 +2,6 @@ package com.xvzhu.connections;
 
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
-import com.xvzhu.connections.apis.IConnection;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.IConnectionMonitor;
 import com.xvzhu.connections.apis.IObserver;
@@ -30,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Builder
 @AllArgsConstructor
-public class BasicSftpClientConnectionManager implements IConnectionManager {
+public class BasicSftpClientConnectionManager<T> implements IConnectionManager {
     private static final Logger LOG = LoggerFactory.getLogger(BasicSftpClientConnectionManager.class);
     private static final int DEFAULT_CONNECTION_SIZE = 8;
     private static final int DEFAULT_TIME_OUT_MILLI = 15000;
@@ -60,7 +59,7 @@ public class BasicSftpClientConnectionManager implements IConnectionManager {
     private long intervalTimeSecond = DEFAULT_SCHEDULE_INTERVAL_TIME_SECOND;
 
     @Override
-    public IConnection borrowConnection(ConnectionBean connectionBean) throws ConnectionException {
+    public T borrowConnection(ConnectionBean connectionBean) throws ConnectionException {
         connectionMonitor.notifyObservers(this, connectionBean);
         ThreadLocal<ManagerBean> threadLocal = connections.get(connectionBean);
         if (null == threadLocal) {
@@ -143,7 +142,7 @@ public class BasicSftpClientConnectionManager implements IConnectionManager {
         connectionMonitor.attach(observer);
     }
 
-    private IConnection reuseConnection(ConnectionBean connectionBean, ManagerBean managerBean)
+    private T reuseConnection(ConnectionBean connectionBean, ManagerBean managerBean)
             throws ConnectionException {
         synchronized (managerBean.getLock()) {
             if (managerBean.isConnectionBorrowed) {
@@ -156,11 +155,11 @@ public class BasicSftpClientConnectionManager implements IConnectionManager {
             managerBean.setBorrowTime(Calendar.getInstance().getTimeInMillis());
             LOG.debug("Reuse the connection for host {}, thread {}",
                     connectionBean.getHost(), Thread.currentThread().getName());
-            return managerBean.getSftpConnection();
+            return (T)managerBean.getSftpConnection();
         }
     }
 
-    private IConnection getAndRegisterNewConnection(ConnectionBean connectionBean) throws ConnectionException {
+    private T getAndRegisterNewConnection(ConnectionBean connectionBean) throws ConnectionException {
         ManagerBean managerBean;
         synchronized (this) {
             ISftpConnection connection =
@@ -178,7 +177,7 @@ public class BasicSftpClientConnectionManager implements IConnectionManager {
             connections.put(connectionBean, managerBeanThreadLocal);
             LOG.debug("New a connection for host {}, thread {}",
                     connectionBean.getHost(), Thread.currentThread().getName());
-            return connection;
+            return (T) connection;
         }
     }
 

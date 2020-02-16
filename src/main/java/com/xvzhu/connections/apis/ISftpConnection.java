@@ -12,7 +12,7 @@ import java.util.List;
  * @version V1.0
  * @since Date : 2020-02-15 15:34
  */
-public interface ISftpConnection extends IConnection {
+public interface ISftpConnection {
     /**
      * Gets channel sftp.
      *
