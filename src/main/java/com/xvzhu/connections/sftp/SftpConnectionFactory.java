@@ -31,8 +31,6 @@ public class SftpConnectionFactory extends BasePooledObjectFactory<ISftpConnecti
     @Builder.Default
     private JSch jsch = new JSch();
     @Builder.Default
-    private Session sshSession;
-    @Builder.Default
     private int timeoutMilliSecond = DEFAULT_TIME_OUT_MILLI;
     private ConnectionBean connectionBean;
 
@@ -49,7 +47,7 @@ public class SftpConnectionFactory extends BasePooledObjectFactory<ISftpConnecti
     @Override
     public ISftpConnection create() throws ConnectionException {
         try {
-            sshSession = jsch.getSession(connectionBean.getUsername(),
+            Session sshSession = jsch.getSession(connectionBean.getUsername(),
                     connectionBean.getHost(),
                     connectionBean.getPort());
             sshSession.setPassword(connectionBean.getPassword());
@@ -92,10 +90,12 @@ public class SftpConnectionFactory extends BasePooledObjectFactory<ISftpConnecti
             ChannelSftp channelSftp = sftp.getChannelSftp();
             if (channelSftp != null) {
                 channelSftp.disconnect();
+                try {
+                    channelSftp.getSession().disconnect();
+                } catch (JSchException e) {
+                    LOG.error("Failed to close the session", e);
+                }
             }
-        }
-        if (sshSession != null) {
-            sshSession.disconnect();
         }
     }
 

@@ -2,12 +2,14 @@ package com.xvzhu.connections;
 
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
+import com.xvzhu.connections.apis.ConnectionManagerConfig;
 import com.xvzhu.connections.apis.IConnection;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.IConnectionMonitor;
 import com.xvzhu.connections.apis.IObserver;
 import com.xvzhu.connections.apis.ISftpConnection;
 import com.xvzhu.connections.monitor.ConnectionMonitor;
+import com.xvzhu.connections.operation.OperationFactory;
 import com.xvzhu.connections.sftp.SftpConnectionFactory;
 import lombok.Builder;
 import lombok.Data;
@@ -17,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Calendar;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 /**
  * <p>Single connection scene.</p>
@@ -31,50 +34,24 @@ import java.util.concurrent.ConcurrentHashMap;
 public class BasicSftpClientConnectionManager<T extends IConnection> implements IConnectionManager {
     private static final Logger LOG = LoggerFactory.getLogger(BasicSftpClientConnectionManager.class);
     private static final int DEFAULT_MAX_CONNECTION_SIZE = 8;
-    private static final int DEFAULT_REUSE_TIME_OUT_MILLI = 15000;
-    private static final int DEFAULT_CLOSE_TIME_OUT_MILLI = 60000;
-    private static final long DEFAULT_SCHEDULE_INTERVAL_TIME_SECOND = 60L;
-    private static final int MAX_TIME_OUT_MILLI = 3600000;
 
     /**
      * monitor container.<br>
      * Static container for monitor all connections for each host, thread.
      */
-    private static Map<ConnectionBean, ThreadLocal<ManagerBean>> connections
+    private static Map<ConnectionBean, Map<Thread, ManagerBean>> connections
             = new ConcurrentHashMap<>(DEFAULT_MAX_CONNECTION_SIZE);
 
     private static IConnectionMonitor connectionMonitor = ConnectionMonitor.getInstance();
 
-    /**
-     * The max size of connections all of current process(ClassLoader).
-     */
-    private static int maxConnectionSize = DEFAULT_MAX_CONNECTION_SIZE;
-    /**
-     * Connection close timeout configuration.
-     * Default is 60 seconds.
-     * If time out, close the connection.
-     */
-    private int timeoutMilliSecond = DEFAULT_CLOSE_TIME_OUT_MILLI;
-    /**
-     * Connection reuse timeout configuration.
-     * Default is 15 seconds.
-     * If time out, release the connection to reuse.
-     */
-    private int reuseTimeoutMilliSecond = DEFAULT_REUSE_TIME_OUT_MILLI;
-    /**
-     * The interval of schedule(Second).
-     */
-    private long intervalTimeSecond = DEFAULT_SCHEDULE_INTERVAL_TIME_SECOND;
+    private static OperationFactory operationFactory;
 
-    private BasicSftpClientConnectionManager(int maxConnectionSize,
-                                            int timeoutMilliSecond,
-                                            int reuseTimeoutMilliSecond,
-                                            long intervalTimeSecond) {
-        this.timeoutMilliSecond = timeoutMilliSecond;
-        this.reuseTimeoutMilliSecond = reuseTimeoutMilliSecond;
-        this.intervalTimeSecond = intervalTimeSecond;
-        BasicSftpClientConnectionManager.maxConnectionSize = maxConnectionSize;
-        connectionMonitor.setIntervalTimeSecond(intervalTimeSecond);
+    private static ConnectionManagerConfig connectionManagerConfig;
+
+    private BasicSftpClientConnectionManager(ConnectionManagerConfig connectionManagerConfig) {
+        BasicSftpClientConnectionManager.connectionManagerConfig = connectionManagerConfig;
+        connectionMonitor.setIntervalTimeSecond(connectionManagerConfig.getIntervalTimeSecond());
+        operationFactory = new OperationFactory(connectionManagerConfig);
     }
 
     /**
@@ -82,17 +59,26 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
      *
      * @return the connections
      */
-    public static Map<ConnectionBean, ThreadLocal<ManagerBean>> getConnections() {
+    public static Map<ConnectionBean, Map<Thread, ManagerBean>> getConnections() {
         return connections;
     }
 
     /**
-     * Gets max size of all connections limit.
+     * Get the parameters of static configurations.
      *
      * @return the max connection size
      */
-    public static int getMaxConnectionSize() {
-        return maxConnectionSize;
+    public static ConnectionManagerConfig getConnectionManagerConfig() {
+        return connectionManagerConfig;
+    }
+
+    /**
+     * Gets operation factory.
+     *
+     * @return the operation factory
+     */
+    public static Consumer<Map.Entry<ConnectionBean, Map<Thread, ManagerBean>>> getReleaseConsumer() {
+        return operationFactory.getReleaseConsumer();
     }
 
     /**
@@ -105,14 +91,14 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
     @Override
     public T borrowConnection(ConnectionBean connectionBean) throws ConnectionException {
         connectionMonitor.notifyObservers(this, connectionBean);
-        ThreadLocal<ManagerBean> threadLocal = connections.get(connectionBean);
+        Map<Thread, ManagerBean> threadLocal = connections.get(connectionBean);
         if (null == threadLocal) {
             LOG.info("Then host {}, thread {} 's do not has any connections!",
                     connectionBean.getHost(),
                     Thread.currentThread().getName());
             return getAndRegisterNewConnection(connectionBean);
         }
-        ManagerBean managerBean = threadLocal.get();
+        ManagerBean managerBean = threadLocal.get(Thread.currentThread());
         if (null != managerBean) {
             return reuseConnection(connectionBean, managerBean);
         } else {
@@ -129,7 +115,7 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
     @Override
     public void releaseConnection(ConnectionBean connectionBean) throws ConnectionException {
         connectionMonitor.notifyObservers(this, connectionBean);
-        ThreadLocal<ManagerBean> threadLocal = connections.get(connectionBean);
+        Map<Thread, ManagerBean> threadLocal = connections.get(connectionBean);
         if (null == threadLocal) {
             LOG.info("Then host {}, thread {} 's do not has any connections!",
                     connectionBean.getHost(),
@@ -137,7 +123,7 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
             return;
         }
 
-        ManagerBean managerBean = threadLocal.get();
+        ManagerBean managerBean = threadLocal.get(Thread.currentThread());
         if (null == managerBean) {
             LOG.info("Then host {}, thread {} 's connection has been closed!",
                     connectionBean.getHost(),
@@ -159,7 +145,7 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
     @Override
     public void closeConnection(ConnectionBean connectionBean) throws ConnectionException {
         connectionMonitor.notifyObservers(this, connectionBean);
-        ThreadLocal<ManagerBean> threadLocal = connections.get(connectionBean);
+        Map<Thread, ManagerBean> threadLocal = connections.get(connectionBean);
         if (null == threadLocal) {
             LOG.info("Then host {}, thread {} 's do not has any connections!",
                     connectionBean.getHost(),
@@ -167,7 +153,7 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
             return;
         }
 
-        ManagerBean managerBean = threadLocal.get();
+        ManagerBean managerBean = threadLocal.get(Thread.currentThread());
         if (null == managerBean) {
             LOG.info("Then host {}, thread {} 's connection has been closed!",
                     connectionBean.getHost(),
@@ -176,7 +162,7 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
         }
         synchronized (managerBean.getLock()) {
             // double check.
-            if (connections.get(connectionBean).get() == null) {
+            if (connections.get(connectionBean).get(Thread.currentThread()) == null) {
                 LOG.info("Then host {}, thread {} 's connection has been closed!",
                         connectionBean.getHost(),
                         Thread.currentThread().getName());
@@ -184,7 +170,7 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
             }
             ISftpConnection connection = managerBean.getSftpConnection();
             connection.getChannelSftp().disconnect();
-            connections.get(connectionBean).remove();
+            connections.get(connectionBean).remove(Thread.currentThread());
         }
     }
 
@@ -232,20 +218,14 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
             ISftpConnection connection =
                     SftpConnectionFactory.builder()
                             .connectionBean(connectionBean)
-                            .timeoutMilliSecond(timeoutMilliSecond).build().create();
-            timeoutMilliSecond =
-                    timeoutMilliSecond > 0 && timeoutMilliSecond < MAX_TIME_OUT_MILLI ?
-                            DEFAULT_CLOSE_TIME_OUT_MILLI : timeoutMilliSecond;
-            reuseTimeoutMilliSecond =
-                    reuseTimeoutMilliSecond > 0 && reuseTimeoutMilliSecond < MAX_TIME_OUT_MILLI ?
-                            DEFAULT_REUSE_TIME_OUT_MILLI : reuseTimeoutMilliSecond;
+                            .timeoutMilliSecond(connectionManagerConfig.getConnectionTimeoutMs()).build().create();
+
             managerBean = ManagerBean.builder()
                     .isConnectionBorrowed(true)
                     .sftpConnection(connection)
-                    .timeOutMilli(timeoutMilliSecond)
-                    .reuseTimeOutMilli(reuseTimeoutMilliSecond).build();
-            ThreadLocal<ManagerBean> managerBeanThreadLocal = new ThreadLocal<>();
-            managerBeanThreadLocal.set(managerBean);
+                    .build();
+            Map<Thread, ManagerBean> managerBeanThreadLocal = new ConcurrentHashMap<>(DEFAULT_MAX_CONNECTION_SIZE);
+            managerBeanThreadLocal.put(Thread.currentThread(), managerBean);
             connections.put(connectionBean, managerBeanThreadLocal);
             LOG.debug("New a connection for host {}, thread {}",
                     connectionBean.getHost(), Thread.currentThread().getName());
@@ -263,10 +243,6 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
         private Object lock = new Object();
         private ISftpConnection sftpConnection;
         @Builder.Default
-        private long timeOutMilli = DEFAULT_CLOSE_TIME_OUT_MILLI;
-        @Builder.Default
-        private long reuseTimeOutMilli = DEFAULT_REUSE_TIME_OUT_MILLI;
-        @Builder.Default
         private long borrowTime = Calendar.getInstance().getTimeInMillis();
         private long releaseTime;
         @Builder.Default
@@ -274,80 +250,20 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
     }
 
     /**
-     * Builder basic sftp client connection manager builder.
-     *
-     * @return the basic sftp client connection manager builder
-     */
-    public static BasicSftpClientConnectionManagerBuilder builder() {
-        return new BasicSftpClientConnectionManagerBuilder();
-    }
-
-    /**
      * The type Basic sftp client connection manager builder.
      */
     public static class BasicSftpClientConnectionManagerBuilder {
-        /**
-         * The max size of connections all of current process(ClassLoader).
-         */
-        private int maxConnectionSize = DEFAULT_MAX_CONNECTION_SIZE;
-        /**
-         * Connection close timeout configuration.
-         * Default is 60 seconds.
-         * If time out, close the connection.
-         */
-        private int timeoutMilliSecond = DEFAULT_CLOSE_TIME_OUT_MILLI;
-        /**
-         * Connection reuse timeout configuration.
-         * Default is 15 seconds.
-         * If time out, release the connection to reuse.
-         */
-        private int reuseTimeoutMilliSecond = DEFAULT_REUSE_TIME_OUT_MILLI;
-        /**
-         * The interval of schedule(Second).
-         */
-        private long intervalTimeSecond = DEFAULT_SCHEDULE_INTERVAL_TIME_SECOND;
+        private ConnectionManagerConfig connectionManagerConfig;
 
         /**
-         * Sets max connection size.
+         * Sets connection manager config.
          *
-         * @param maxConnectionSize the max connection size
-         * @return the max connection size
+         * @param connectionManagerConfig the connection manager config
+         * @return the connection manager config
          */
-        public BasicSftpClientConnectionManagerBuilder setMaxConnectionSize(int maxConnectionSize) {
-            this.maxConnectionSize = maxConnectionSize;
-            return this;
-        }
-
-        /**
-         * Sets timeout milli second.
-         *
-         * @param timeoutMilliSecond the timeout milli second
-         * @return the timeout milli second
-         */
-        public BasicSftpClientConnectionManagerBuilder setTimeoutMilliSecond(int timeoutMilliSecond) {
-            this.timeoutMilliSecond = timeoutMilliSecond;
-            return this;
-        }
-
-        /**
-         * Sets reuse timeout milli second.
-         *
-         * @param reuseTimeoutMilliSecond the reuse timeout milli second
-         * @return the reuse timeout milli second
-         */
-        public BasicSftpClientConnectionManagerBuilder setReuseTimeoutMilliSecond(int reuseTimeoutMilliSecond) {
-            this.reuseTimeoutMilliSecond = reuseTimeoutMilliSecond;
-            return this;
-        }
-
-        /**
-         * Sets interval time second.
-         *
-         * @param intervalTimeSecond the interval time second
-         * @return the interval time second
-         */
-        public BasicSftpClientConnectionManagerBuilder setIntervalTimeSecond(long intervalTimeSecond) {
-            this.intervalTimeSecond = intervalTimeSecond;
+        public BasicSftpClientConnectionManagerBuilder setConnectionManagerConfig(
+                ConnectionManagerConfig connectionManagerConfig) {
+            this.connectionManagerConfig = connectionManagerConfig;
             return this;
         }
 
@@ -357,10 +273,16 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
          * @return the basic sftp client connection manager
          */
         public BasicSftpClientConnectionManager build() {
-            return new BasicSftpClientConnectionManager(maxConnectionSize,
-                    timeoutMilliSecond,
-                    reuseTimeoutMilliSecond,
-                    intervalTimeSecond);
+            return new BasicSftpClientConnectionManager(connectionManagerConfig);
         }
+    }
+
+    /**
+     * Builder basic sftp client connection manager builder.
+     *
+     * @return the basic sftp client connection manager builder
+     */
+    public static BasicSftpClientConnectionManagerBuilder builder() {
+        return new BasicSftpClientConnectionManagerBuilder();
     }
 }

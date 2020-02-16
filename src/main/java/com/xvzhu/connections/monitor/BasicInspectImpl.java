@@ -3,6 +3,7 @@ package com.xvzhu.connections.monitor;
 import com.xvzhu.connections.BasicSftpClientConnectionManager;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.IInspect;
+import com.xvzhu.connections.operation.OperationFactory;
 import lombok.NonNull;
 import java.util.Map;
 
@@ -23,7 +24,7 @@ public class BasicInspectImpl implements IInspect {
      */
     @Override
     public void inspect(@NonNull ConnectionBean connectionBean) {
-
+//        BasicSftpClientConnectionManager
     }
 
     /**
@@ -31,13 +32,8 @@ public class BasicInspectImpl implements IInspect {
      */
     @Override
     public void inspect() {
-        Map<ConnectionBean, ThreadLocal<BasicSftpClientConnectionManager.ManagerBean>> connections
+        Map<ConnectionBean, Map<Thread, BasicSftpClientConnectionManager.ManagerBean>> connections
                 = BasicSftpClientConnectionManager.getConnections();
-        connections.entrySet().stream().forEach(entry -> closeConnection(entry.getKey(), entry.getValue()));
-    }
-
-    private void closeConnection(ConnectionBean connectionBean,
-                                 ThreadLocal<BasicSftpClientConnectionManager.ManagerBean> managerBeanThreadLocal) {
-
+        connections.entrySet().stream().forEach(BasicSftpClientConnectionManager.getReleaseConsumer());
     }
 }

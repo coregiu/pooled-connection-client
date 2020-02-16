@@ -1,5 +1,6 @@
 package com.xvzhu.connections.monitor;
 
+import com.xvzhu.connections.apis.ConnectionConst;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.IConnectionMonitor;
@@ -38,7 +39,7 @@ public class ConnectionMonitor implements IConnectionMonitor {
         public Thread newThread(Runnable r) {
             LOG.info("Begin to inspect the mangers by schedule thread.");
             Thread scheduledThread = new Thread();
-            scheduledThread.setName("Connection-Monitor-Thread");
+            scheduledThread.setName(ConnectionConst.SCHEDULE_THREAD_NAME);
             return scheduledThread;
         }
     });
