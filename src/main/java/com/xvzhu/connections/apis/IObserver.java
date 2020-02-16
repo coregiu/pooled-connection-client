@@ -7,7 +7,7 @@ package com.xvzhu.connections.apis;
  * @version V1.0
  * @since Date : 2020-02-15 14:22
  */
-public interface IObserver {
+public interface IObserver extends Runnable {
     /**
      * <p>Observer model, the interface of observer.</p>
      *

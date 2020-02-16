@@ -10,19 +10,14 @@ import com.xvzhu.connections.apis.IObserver;
  * @version V1.0
  * @since Date : 2020-02-16 11:31
  */
-public class BasicInspectObserver implements IObserver, IInspect {
+public class BasicInspectImpl implements IInspect {
     @Override
     public void inspect(IConnectionManager connectionManager, ConnectionBean connectionBean) {
 
     }
 
     @Override
-    public void visit(IConnectionManager connectionManager, ConnectionBean connectionBean) {
-
-    }
-
-    @Override
-    public void run() {
+    public void inspect(IConnectionManager connectionManager) {
 
     }
 }

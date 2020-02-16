@@ -23,6 +23,11 @@ public class LogObserver implements IObserver {
      */
     @Override
     public void visit(IConnectionManager connectionManager, ConnectionBean connectionBean) {
-        LOG.warn("Attention!!!");
+        LOG.warn("Begin to inspect the connection manager: {}, {}", connectionBean.getHost(), Thread.currentThread());
+    }
+
+    @Override
+    public void run() {
+        LOG.warn("Begin to inspect the connection manager");
     }
 }
