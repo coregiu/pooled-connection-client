@@ -1,5 +1,6 @@
 package com.xvzhu.connections.monitor;
 
+import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.IConnectionMonitor;
 import com.xvzhu.connections.apis.IObserver;
@@ -53,9 +54,9 @@ public class ConnectionMonitor implements IConnectionMonitor {
      *
      * @param connectionManager the connection manager
      */
-    public void notifyObservers(IConnectionManager connectionManager) {
+    public void notifyObservers(IConnectionManager connectionManager, ConnectionBean connectionBean) {
         for (IObserver observer : observers) {
-            observer.visit(connectionManager);
+            observer.visit(connectionManager, connectionBean);
         }
     }
 }

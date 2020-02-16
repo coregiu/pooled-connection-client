@@ -52,7 +52,7 @@ public class BasicSftpClientConnectionManager implements IConnectionManager {
 
     @Override
     public IConnection borrowConnection(ConnectionBean connectionBean) throws ConnectionException {
-        connectionMonitor.notifyObservers(this);
+        connectionMonitor.notifyObservers(this, connectionBean);
         ThreadLocal<ManagerBean> threadLocal = connections.get(connectionBean);
         if (null == threadLocal) {
             LOG.info("Then host {}, thread {} 's do not has any connections!",
@@ -70,7 +70,7 @@ public class BasicSftpClientConnectionManager implements IConnectionManager {
 
     @Override
     public void releaseConnection(ConnectionBean connectionBean) throws ConnectionException {
-        connectionMonitor.notifyObservers(this);
+        connectionMonitor.notifyObservers(this, connectionBean);
         ThreadLocal<ManagerBean> threadLocal = connections.get(connectionBean);
         if (null == threadLocal) {
             LOG.info("Then host {}, thread {} 's do not has any connections!",
@@ -94,7 +94,7 @@ public class BasicSftpClientConnectionManager implements IConnectionManager {
 
     @Override
     public void closeConnection(ConnectionBean connectionBean) throws ConnectionException {
-        connectionMonitor.notifyObservers(this);
+        connectionMonitor.notifyObservers(this, connectionBean);
         ThreadLocal<ManagerBean> threadLocal = connections.get(connectionBean);
         if (null == threadLocal) {
             LOG.info("Then host {}, thread {} 's do not has any connections!",
@@ -125,18 +125,13 @@ public class BasicSftpClientConnectionManager implements IConnectionManager {
     }
 
     @Override
-    public void accept(IObserver observer) {
-        observer.visit(this);
+    public void accept(IObserver observer, ConnectionBean connectionBean) {
+        observer.visit(this, connectionBean);
     }
 
     @Override
     public void attach(IObserver observer) {
         connectionMonitor.attach(observer);
-    }
-
-    @Override
-    public void inspect() {
-
     }
 
     private IConnection reuseConnection(ConnectionBean connectionBean, ManagerBean managerBean)
@@ -159,8 +154,8 @@ public class BasicSftpClientConnectionManager implements IConnectionManager {
     private IConnection getAndRegisterNewConnection(ConnectionBean connectionBean) throws ConnectionException {
         ManagerBean managerBean;
         synchronized (this) {
-            ISftpConnection connection = null;
-//                    SftpConnectionFactory.builder().set(connectionBean).build().create();
+            ISftpConnection connection =
+                    SftpConnectionFactory.builder().setConnectionBean(connectionBean).build().create();
             timeOutMilli =
                     timeOutMilli > 0 && timeOutMilli < MAX_TIME_OUT_MILLI ? DEFAULT_TIME_OUT_MILLI : timeOutMilli;
             managerBean = ManagerBean.builder()

@@ -42,9 +42,10 @@ public interface IConnectionManager {
     /**
      * <p>Accept the visitor of monitor module.</p>
      *
-     * @param observer the observer
+     * @param observer       the observer
+     * @param connectionBean the connection bean
      */
-    void accept(IObserver observer);
+    void accept(IObserver observer, ConnectionBean connectionBean);
 
     /**
      * <p>Attach the user's observer to monitor's observer list.</p>
@@ -52,10 +53,4 @@ public interface IConnectionManager {
      * @param observer the observer
      */
     void attach(IObserver observer);
-
-    /**
-     * <p>Inspect the connection or pool, close the connection，
-     * if connection timed out or grow too fast.</p>
-     */
-    void inspect();
 }
