@@ -159,10 +159,8 @@ public class BasicSftpClientConnectionManager implements IConnectionManager {
             timeOutMilli =
                     timeOutMilli > 0 && timeOutMilli < MAX_TIME_OUT_MILLI ? DEFAULT_TIME_OUT_MILLI : timeOutMilli;
             managerBean = ManagerBean.builder()
-                    .borrowTime(Calendar.getInstance().getTimeInMillis())
                     .isConnectionBorrowed(true)
                     .sftpConnection(connection)
-                    .lock(new Object())
                     .timeOutMilli(timeOutMilli).build();
             ThreadLocal<ManagerBean> managerBeanThreadLocal = new ThreadLocal<>();
             managerBeanThreadLocal.set(managerBean);
@@ -176,11 +174,15 @@ public class BasicSftpClientConnectionManager implements IConnectionManager {
     @Data
     @Builder
     static class ManagerBean {
-        private Object lock;
+        @Builder.Default
+        private Object lock = new Object();
         private ISftpConnection sftpConnection;
-        private long timeOutMilli;
-        private long borrowTime;
+        @Builder.Default
+        private long timeOutMilli = DEFAULT_TIME_OUT_MILLI;
+        @Builder.Default
+        private long borrowTime = Calendar.getInstance().getTimeInMillis();
         private long releaseTime;
-        private boolean isConnectionBorrowed;
+        @Builder.Default
+        private boolean isConnectionBorrowed = false;
     }
 }
