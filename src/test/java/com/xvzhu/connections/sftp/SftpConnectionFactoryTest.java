@@ -1,8 +1,10 @@
 package com.xvzhu.connections.sftp;
 
+import com.jcraft.jsch.JSchException;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.ISftpConnection;
+import com.xvzhu.connections.data.ConnectBeanBuilder;
 import com.xvzhu.connections.mockserver.SftpServer;
 import org.apache.commons.pool2.PooledObject;
 import org.junit.After;
@@ -12,6 +14,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.CountDownLatch;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -28,21 +32,18 @@ public class SftpConnectionFactoryTest {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
     private SftpServer sftpServer;
+    private ConnectionBean connectionBean;
 
     @Before
     public void sftpImplTest() throws InterruptedException {
         LOG.error("Begin to start server.");
         sftpServer = new SftpServer();
-        try {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    sftpServer.setupSftpServer();
-                }
-            }).start();
-        } catch (Exception e) {
-            LOG.error("Failed to init test.", e);
-        }
+        String uuid = sftpServer.getUuid();
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        sftpServer.setupSftpServer(uuid, countDownLatch);
+        countDownLatch.await();
+        int port = sftpServer.getPort(uuid);
+        connectionBean = ConnectBeanBuilder.builder().port(port).build().getConnectionBean();
     }
 
     @After
@@ -52,34 +53,34 @@ public class SftpConnectionFactoryTest {
     }
 
     @Test
-    public void should_successfully_when_create_connection_using_correct_info() throws ConnectionException {
-        ConnectionBean connectionBean = new ConnectionBean("127.0.0.1", 2222, "huawei", "huawei");
+    public void should_successfully_when_create_connection_using_correct_info() throws ConnectionException, JSchException {
         ISftpConnection sftpConnection = SftpConnectionFactory.builder().connectionBean(connectionBean).build().create();
         try {
             assertThat(sftpConnection.currentDirectory() != null, is(true));
         } finally {
             sftpConnection.getChannelSftp().disconnect();
+            sftpConnection.getChannelSftp().getSession().disconnect();
         }
     }
 
     @Test
-    public void should_failed_when_create_connection_using_wrong_info() throws ConnectionException {
+    public void should_failed_when_create_connection_using_wrong_info() throws ConnectionException, JSchException {
         expectedException.expect(ConnectionException.class);
         expectedException.expectMessage("Failed to connect the ftp server");
-        ConnectionBean connectionBean = new ConnectionBean("127.0.0.1", 2222, "huawei", "");
-        ISftpConnection sftpConnection = SftpConnectionFactory.builder().connectionBean(connectionBean).build().create();
+        ConnectionBean connectionBean1 = ConnectBeanBuilder.builder().password("").build().getConnectionBean();
+        ISftpConnection sftpConnection = SftpConnectionFactory.builder().connectionBean(connectionBean1).build().create();
         try {
             assertThat(sftpConnection.currentDirectory() != null, is(true));
         } finally {
             if (sftpConnection != null) {
                 sftpConnection.getChannelSftp().disconnect();
+                sftpConnection.getChannelSftp().getSession().disconnect();
             }
         }
     }
 
     @Test
-    public void should_successfully_when_destroy_connection() throws ConnectionException {
-        ConnectionBean connectionBean = new ConnectionBean("127.0.0.1", 2222, "huawei", "huawei");
+    public void should_successfully_when_destroy_connection() throws ConnectionException, JSchException {
         SftpConnectionFactory sftpConnectionFactory = SftpConnectionFactory.builder().connectionBean(connectionBean).build();
         ISftpConnection sftpConnection = sftpConnectionFactory.create();
         try {
@@ -91,6 +92,7 @@ public class SftpConnectionFactoryTest {
         } finally {
             if (sftpConnection != null) {
                 sftpConnection.getChannelSftp().disconnect();
+                sftpConnection.getChannelSftp().getSession().disconnect();
             }
         }
     }

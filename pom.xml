@@ -21,6 +21,7 @@
         <mina.version>2.1.3</mina.version>
         <jmockit.version>1.49</jmockit.version>
         <sshd.version>1.7.0</sshd.version>
+        <guava.version>28.2-jre</guava.version>
     </properties>
 
     <dependencies>
@@ -71,6 +72,12 @@
             <groupId>org.apache.sshd</groupId>
             <artifactId>sshd-core</artifactId>
             <version>${sshd.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

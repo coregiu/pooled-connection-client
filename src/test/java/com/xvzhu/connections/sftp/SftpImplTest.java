@@ -3,6 +3,7 @@ package com.xvzhu.connections.sftp;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.ISftpConnection;
+import com.xvzhu.connections.data.ConnectBeanBuilder;
 import com.xvzhu.connections.mockserver.SftpServer;
 import org.junit.After;
 import org.junit.Before;
@@ -41,17 +42,12 @@ public class SftpImplTest {
     public void sftpImplTest() throws InterruptedException, ConnectionException {
         LOG.error("Begin to start server.");
         sftpServer = new SftpServer();
-        try {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    sftpServer.setupSftpServer();
-                }
-            }).start();
-        } catch (Exception e) {
-            LOG.error("Failed to init test.", e);
-        }
-        ConnectionBean connectionBean = new ConnectionBean("127.0.0.1", 2222, "huawei", "huawei");
+        String uuid = sftpServer.getUuid();
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        sftpServer.setupSftpServer(uuid, countDownLatch);
+        countDownLatch.await();
+        int port = sftpServer.getPort(uuid);
+        ConnectionBean connectionBean = ConnectBeanBuilder.builder().port(port).build().getConnectionBean();
         sftpConnection = SftpConnectionFactory.builder().connectionBean(connectionBean).build().create();
     }
 
