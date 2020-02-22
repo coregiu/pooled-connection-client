@@ -14,8 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -32,19 +32,18 @@ public class ConnectionMonitor implements IConnectionMonitor {
     private static Logger LOG = LoggerFactory.getLogger(ConnectionMonitor.class);
     private static final int DEFAULT_OBSERVERS = 2;
     private static final long DEFAULT_INTERVAL_TIME_SECOND = 60L;
+    private IObserver inspectObserver = new InspectObserver();
+    private Future<?> scheduleFuture;
 
     private static class ConnectionMonitorHolder {
         private static final ConnectionMonitor INSTANCE = new ConnectionMonitor();
     }
 
-    private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            LOG.info("Begin to inspect the mangers by schedule thread.");
-            Thread scheduledThread = new Thread();
-            scheduledThread.setName(ConnectionConst.SCHEDULE_THREAD_NAME);
-            return scheduledThread;
-        }
+    private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(r -> {
+        LOG.info("Begin to inspect the mangers by schedule thread.");
+        Thread scheduledThread = new Thread(r);
+        scheduledThread.setName(ConnectionConst.SCHEDULE_THREAD_NAME);
+        return scheduledThread;
     });
 
     /**
@@ -55,10 +54,9 @@ public class ConnectionMonitor implements IConnectionMonitor {
     private long intervalTimeSecond = DEFAULT_INTERVAL_TIME_SECOND;
 
     private ConnectionMonitor() {
-        IObserver inspectObserver = new InspectObserver();
         observers.add(new LogObserver());
         observers.add(inspectObserver);
-        executor.schedule(inspectObserver, intervalTimeSecond, TimeUnit.SECONDS);
+        executor.scheduleAtFixedRate(inspectObserver, 0, intervalTimeSecond, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -79,6 +77,16 @@ public class ConnectionMonitor implements IConnectionMonitor {
     @Override
     public void setIntervalTimeSecond(long intervalTimeSecond) {
         this.intervalTimeSecond = intervalTimeSecond;
+    }
+
+    @Override
+    public void setAutoInspect(boolean isAutoInspect) {
+        if (isAutoInspect) {
+            scheduleFuture.cancel(true);
+            scheduleFuture = executor.scheduleAtFixedRate(inspectObserver, 0, intervalTimeSecond, TimeUnit.MILLISECONDS);
+        } else {
+            scheduleFuture.cancel(true);
+        }
     }
 
     /**

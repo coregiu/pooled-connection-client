@@ -39,6 +39,10 @@ public class InspectObserver implements IObserver, Runnable {
     @Override
     public void run() {
         try {
+            if (null == connections) {
+                LOG.warn("There is no connections.");
+                return;
+            }
             basicInspect.inspect(connections);
             basicInspect.inspect(connections);
         } catch (Exception e) {

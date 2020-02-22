@@ -43,4 +43,11 @@ public interface IConnectionMonitor {
      * @param intervalTimeSecond the interval time second
      */
     void setIntervalTimeSecond(long intervalTimeSecond);
+
+    /**
+     * Sets auto inspect.
+     *
+     * @param isAutoInspect is auto inspect
+     */
+    void setAutoInspect(boolean isAutoInspect);
 }

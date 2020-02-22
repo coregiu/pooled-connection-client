@@ -3,7 +3,6 @@ package com.xvzhu.connections.operation;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
-import com.xvzhu.connections.BasicSftpClientConnectionManager;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionConst;
 import com.xvzhu.connections.apis.ConnectionManagerConfig;
@@ -46,6 +45,7 @@ public class OperationFactoryTest {
 
     @Test
     public void should_release_current_basic_connections_when_basic_connection_reuse_time_out() {
+        Map<ConnectionBean, Map<Thread, ManagerBean>> connections = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
         ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "huawei", "huawei");
         Map<Thread, ManagerBean> managerBeanMap = new HashMap<>();
@@ -55,9 +55,9 @@ public class OperationFactoryTest {
                         .borrowTime(timeNow - connectionManagerConfig.getBorrowTimeoutMS() - 100000)
                         .build();
         managerBeanMap.put(Thread.currentThread(), managerBean);
-        BasicSftpClientConnectionManager.getConnections().put(connectionBean, managerBeanMap);
+        connections.put(connectionBean, managerBeanMap);
 
-        BasicSftpClientConnectionManager.getConnections().entrySet().stream().forEach(operationFactory.getReleaseConsumer());
+        connections.entrySet().stream().forEach(operationFactory.getReleaseConsumer());
         assertThat(managerBean.isConnectionBorrowed(), is(false));
         long releaseInterval = (managerBean.getReleaseTime() - timeNow) / 1000;
         assertThat(releaseInterval >= 0 && releaseInterval < 3, is(true));
@@ -65,6 +65,7 @@ public class OperationFactoryTest {
 
     @Test
     public void should_not_release_current_basic_connections_when_basic_connection_reuse_time_not_out() {
+        Map<ConnectionBean, Map<Thread, ManagerBean>> connections = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
         ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "huawei", "huawei");
         Map<Thread, ManagerBean> managerBeanMap = new HashMap<>();
@@ -74,14 +75,15 @@ public class OperationFactoryTest {
                         .borrowTime(timeNow)
                         .build();
         managerBeanMap.put(Thread.currentThread(), managerBean);
-        BasicSftpClientConnectionManager.getConnections().put(connectionBean, managerBeanMap);
+        connections.put(connectionBean, managerBeanMap);
 
-        BasicSftpClientConnectionManager.getConnections().entrySet().stream().forEach(operationFactory.getReleaseConsumer());
+        connections.entrySet().stream().forEach(operationFactory.getReleaseConsumer());
         assertThat(managerBean.isConnectionBorrowed(), is(true));
     }
 
     @Test
     public void should_close_current_basic_connections_when_basic_connection_close_time_out() throws JSchException {
+        Map<ConnectionBean, Map<Thread, ManagerBean>> connections = new HashMap<>();
         new Expectations() {
             {
                 sftpConnection.getChannelSftp();
@@ -103,14 +105,15 @@ public class OperationFactoryTest {
                         .sftpConnection(sftpConnection)
                         .build();
         managerBeanMap.put(Thread.currentThread(), managerBean);
-        BasicSftpClientConnectionManager.getConnections().put(connectionBean, managerBeanMap);
+        connections.put(connectionBean, managerBeanMap);
 
-        BasicSftpClientConnectionManager.getConnections().entrySet().stream().forEach(operationFactory.getReleaseConsumer());
+        connections.entrySet().stream().forEach(operationFactory.getReleaseConsumer());
         assertThat(managerBeanMap.get(Thread.currentThread()) == null, is(true));
     }
 
     @Test
-    public void should_not_close_current_basic_connections_when_basic_connection_close_time_not_out() throws JSchException {
+    public void should_not_close_current_basic_connections_when_basic_connection_close_time_not_out() {
+        Map<ConnectionBean, Map<Thread, ManagerBean>> connections = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
         ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "huawei", "huawei");
         Map<Thread, ManagerBean> managerBeanMap = new HashMap<>();
@@ -121,14 +124,15 @@ public class OperationFactoryTest {
                         .sftpConnection(sftpConnection)
                         .build();
         managerBeanMap.put(Thread.currentThread(), managerBean);
-        BasicSftpClientConnectionManager.getConnections().put(connectionBean, managerBeanMap);
+        connections.put(connectionBean, managerBeanMap);
 
-        BasicSftpClientConnectionManager.getConnections().entrySet().stream().forEach(operationFactory.getReleaseConsumer());
+        connections.entrySet().stream().forEach(operationFactory.getReleaseConsumer());
         assertThat(managerBeanMap.get(Thread.currentThread()) != null, is(true));
     }
 
     @Test
     public void should_release_all_basic_connections_when_basic_connection_reuse_time_out() {
+        Map<ConnectionBean, Map<Thread, ManagerBean>> connections = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
         ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "huawei", "huawei");
         Map<Thread, ManagerBean> managerBeanMap = new HashMap<>();
@@ -138,7 +142,7 @@ public class OperationFactoryTest {
                         .borrowTime(timeNow - connectionManagerConfig.getBorrowTimeoutMS() - 100000)
                         .build();
         managerBeanMap.put(Thread.currentThread(), managerBean);
-        BasicSftpClientConnectionManager.getConnections().put(connectionBean, managerBeanMap);
+        connections.put(connectionBean, managerBeanMap);
 
         ConnectionBean connectionBean1 = new ConnectionBean("192.168.1.2", 22, "huawei", "huawei");
         Map<Thread, ManagerBean> managerBeanMap1 = new HashMap<>();
@@ -148,7 +152,7 @@ public class OperationFactoryTest {
                         .borrowTime(timeNow - connectionManagerConfig.getBorrowTimeoutMS() - 100000)
                         .build();
         managerBeanMap1.put(Thread.currentThread(), managerBean1);
-        BasicSftpClientConnectionManager.getConnections().put(connectionBean1, managerBeanMap1);
+        connections.put(connectionBean1, managerBeanMap1);
 
         ConnectionBean connectionBean2 = new ConnectionBean("192.168.1.3", 22, "huawei", "huawei");
         Map<Thread, ManagerBean> managerBeanMap2 = new HashMap<>();
@@ -158,11 +162,11 @@ public class OperationFactoryTest {
                         .borrowTime(timeNow)
                         .build();
         managerBeanMap2.put(Thread.currentThread(), managerBean2);
-        BasicSftpClientConnectionManager.getConnections().put(connectionBean2, managerBeanMap2);
+        connections.put(connectionBean2, managerBeanMap2);
 
         Thread.currentThread().setName(ConnectionConst.SCHEDULE_THREAD_NAME);
 
-        BasicSftpClientConnectionManager.getConnections().entrySet().stream().forEach(operationFactory.getReleaseConsumer());
+        connections.entrySet().stream().forEach(operationFactory.getReleaseConsumer());
         assertThat(managerBean.isConnectionBorrowed(), is(false));
         assertThat(managerBean1.isConnectionBorrowed(), is(false));
         assertThat(managerBean2.isConnectionBorrowed(), is(true));
@@ -172,6 +176,7 @@ public class OperationFactoryTest {
 
     @Test
     public void should_close_all_basic_connections_when_basic_connection_close_time_out() throws JSchException{
+        Map<ConnectionBean, Map<Thread, ManagerBean>> connections = new HashMap<>();
         new Expectations() {
             {
                 sftpConnection.getChannelSftp();
@@ -192,7 +197,7 @@ public class OperationFactoryTest {
                         .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutSecond() - 100000)
                         .build();
         managerBeanMap.put(Thread.currentThread(), managerBean);
-        BasicSftpClientConnectionManager.getConnections().put(connectionBean, managerBeanMap);
+        connections.put(connectionBean, managerBeanMap);
 
         ConnectionBean connectionBean1 = new ConnectionBean("192.168.1.2", 22, "huawei", "huawei");
         Map<Thread, ManagerBean> managerBeanMap1 = new HashMap<>();
@@ -203,7 +208,7 @@ public class OperationFactoryTest {
                         .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutSecond() - 100000)
                         .build();
         managerBeanMap1.put(Thread.currentThread(), managerBean1);
-        BasicSftpClientConnectionManager.getConnections().put(connectionBean1, managerBeanMap1);
+        connections.put(connectionBean1, managerBeanMap1);
 
         ConnectionBean connectionBean2 = new ConnectionBean("192.168.1.3", 22, "huawei", "huawei");
         Map<Thread, ManagerBean> managerBeanMap2 = new HashMap<>();
@@ -213,11 +218,11 @@ public class OperationFactoryTest {
                         .releaseTime(timeNow)
                         .build();
         managerBeanMap2.put(Thread.currentThread(), managerBean2);
-        BasicSftpClientConnectionManager.getConnections().put(connectionBean2, managerBeanMap2);
+        connections.put(connectionBean2, managerBeanMap2);
 
         Thread.currentThread().setName(ConnectionConst.SCHEDULE_THREAD_NAME);
 
-        BasicSftpClientConnectionManager.getConnections().entrySet().stream().forEach(operationFactory.getReleaseConsumer());
+        connections.entrySet().stream().forEach(operationFactory.getReleaseConsumer());
         assertThat(managerBeanMap.get(Thread.currentThread()) == null, is(true));
         assertThat(managerBeanMap1.get(Thread.currentThread()) == null, is(true));
         assertThat(managerBeanMap2.get(Thread.currentThread()) != null, is(true));
@@ -225,6 +230,7 @@ public class OperationFactoryTest {
 
     @Test
     public void should_close_all_basic_connections_when_basic_connections_exceed_max_limit() throws JSchException{
+        Map<ConnectionBean, Map<Thread, ManagerBean>> connections = new HashMap<>();
         new Expectations() {
             {
                 sftpConnection.getChannelSftp();
@@ -257,11 +263,11 @@ public class OperationFactoryTest {
                 .isConnectionBorrowed(true)
                 .borrowTime(timeNow)
                 .build());
-        BasicSftpClientConnectionManager.getConnections().put(connectionBean, managerBeanMap);
+        connections.put(connectionBean, managerBeanMap);
 
         Thread.currentThread().setName(ConnectionConst.SCHEDULE_THREAD_NAME);
 
-        BasicSftpClientConnectionManager.getConnections().entrySet().stream().forEach(operationFactory.getReleaseConsumer());
+        connections.entrySet().stream().forEach(operationFactory.getReleaseConsumer());
         assertThat(managerBeanMap.size(), is(2));
         assertThat(managerBeanMap.get(Thread.currentThread()) == null, is(true));
     }

@@ -55,7 +55,7 @@ public class OperationFactory {
      * @return the release biConsumer
      */
     public BiConsumer<ConnectionBean, Map<Thread, ManagerBean>> getReleaseBiConsumer() {
-        return (key, value) -> releaseSftpConnection(key, value);
+        return this::releaseSftpConnection;
     }
 
     /**
@@ -84,7 +84,7 @@ public class OperationFactory {
                 return;
             }
             ISftpConnection connection = managerBean.getSftpConnection();
-            if (null != connection.getChannelSftp()) {
+            if (null != connection && null != connection.getChannelSftp()) {
                 connection.getChannelSftp().disconnect();
                 connection.getChannelSftp().getSession().disconnect();
             }
@@ -101,10 +101,10 @@ public class OperationFactory {
                 releaseAllConnections(connectionBean, hostConnectionMap);
             }
         } else {
-            ManagerBean managerBean = hostConnectionMap.get(Thread.currentThread());
-            if (managerBean == null) {
+            if (hostConnectionMap == null || hostConnectionMap.get(Thread.currentThread()) == null) {
                 return;
             }
+            ManagerBean managerBean = hostConnectionMap.get(Thread.currentThread());
             synchronized (managerBean.getLock()) {
                 releaseCurrentConnection(hostConnectionMap);
             }
@@ -114,23 +114,23 @@ public class OperationFactory {
     private void releaseAllConnections(ConnectionBean connectionBean,
                                        Map<Thread, ManagerBean> hostConnectionMap) {
         LOG.debug("begin to release all the connections of host: {}", connectionBean.getHost());
-        Set<Map.Entry<Thread, ManagerBean>> reuseSet
-                = new HashSet<>(hostConnectionMap.size());
         long timeNow = Calendar.getInstance().getTimeInMillis();
         // 1. Release timed out and closed connections. Contains reuse and close time out.
-        hostConnectionMap.entrySet().stream()
+        long releaseSize = hostConnectionMap.entrySet().stream()
                 .filter(entry -> entry.getValue().isConnectionBorrowed() &&
                         isTimedOut(timeNow, entry.getValue().getBorrowTime(), config.getBorrowTimeoutMS()))
-                .forEach(entry -> reuseSet.add(entry));
-        reuseSet.stream().forEach(entry -> releaseAConnection(entry.getValue()));
+                .peek(entry -> releaseAConnection(entry.getValue()))
+                .count();
+        LOG.warn("release size = {}", releaseSize);
 
         Set<Map.Entry<Thread, ManagerBean>> closeSet
                 = new HashSet<>(hostConnectionMap.size());
         hostConnectionMap.entrySet().stream()
                 .filter(entry -> (!entry.getValue().isConnectionBorrowed()) &&
                         isTimedOut(timeNow, entry.getValue().getReleaseTime(), config.getIdleTimeoutSecond()))
-                .forEach(entry -> closeSet.add(entry));
-        closeSet.stream().forEach(entry -> closeAConnection(entry.getKey(), hostConnectionMap));
+                .forEach(closeSet::add);
+        LOG.warn("shutdown size = {}", closeSet.size());
+        closeSet.forEach(entry -> closeAConnection(entry.getKey(), hostConnectionMap));
 
         // 2. Release unused connection if connections is exceed the max size.
         int hostConnectionRemainSize = hostConnectionMap.size() - config.getMaxConnectionSize();
@@ -141,8 +141,9 @@ public class OperationFactory {
                 = new HashSet<>(hostConnectionMap.size());
         hostConnectionMap.entrySet().stream()
                 .filter(entry -> (!entry.getValue().isConnectionBorrowed()))
-                .forEach(entry -> clearSet.add(entry));
-        clearSet.stream().forEach(entry -> closeAConnection(entry.getKey(), hostConnectionMap));
+                .forEach(clearSet::add);
+        LOG.warn("shutdown by connection size check, size = {}", clearSet.size());
+        clearSet.forEach(entry -> closeAConnection(entry.getKey(), hostConnectionMap));
     }
 
     private boolean isTimedOut(long timeNow, long checkTime, int timedout) {

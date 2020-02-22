@@ -1,7 +1,6 @@
 package com.xvzhu.connections;
 
 import com.xvzhu.connections.apis.ConnectionBean;
-import com.xvzhu.connections.apis.ConnectionConst;
 import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.ConnectionManagerConfig;
 import com.xvzhu.connections.apis.IConnection;
@@ -50,21 +49,6 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
 
     private static IConnectionMonitor connectionMonitor = ConnectionMonitor.getInstance();
 
-    private BasicSftpClientConnectionManager(ConnectionManagerConfig connectionManagerConfig) {
-        BasicSftpClientConnectionManager.connectionManagerConfig = connectionManagerConfig;
-        connectionMonitor.setIntervalTimeSecond(connectionManagerConfig.getSchedulePeriodTimeMS());
-        operationFactory = new OperationFactory(connectionManagerConfig);
-    }
-
-    /**
-     * Get connections container.
-     *
-     * @return the connections
-     */
-    public static Map<ConnectionBean, Map<Thread, ManagerBean>> getConnections() {
-        return connections;
-    }
-
     /**
      * Gets release consumer.
      *
@@ -104,7 +88,14 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
         if (null != managerBean) {
             return reuseConnection(connectionBean, managerBean);
         } else {
-            return getAndRegisterNewConnection(connectionBean);
+            if (threadManagerBeanMap.size() >= connectionManagerConfig.getMaxConnectionSize()) {
+                LOG.error("The host:{}, thread:{}' connection is {}, more than the limit:{}.",
+                        connectionBean.getHost(), Thread.currentThread(),
+                        threadManagerBeanMap.size(), connectionManagerConfig.getMaxConnectionSize());
+                throw new ConnectionException("Failed to borrow connection because of to much connections.");
+            } else {
+                return getAndRegisterNewConnection(connectionBean);
+            }
         }
     }
 
@@ -112,40 +103,25 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
      * Release connection.
      *
      * @param connectionBean the connection bean
-     * @throws ConnectionException the connection exception
      */
     @Override
     public void releaseConnection(ConnectionBean connectionBean) {
         connectionMonitor.notifyObservers(this, connectionBean, connections);
-        Map<Thread, ManagerBean> threadManagerBeanMap = connections.get(connectionBean);
-        if (null == threadManagerBeanMap) {
-            LOG.info("Then host {}, thread {} 's do not has any connections!",
-                    connectionBean.getHost(),
-                    Thread.currentThread().getName());
-            return;
-        }
-
-        ManagerBean managerBean = threadManagerBeanMap.get(Thread.currentThread());
-        if (null == managerBean) {
-            LOG.info("Then host {}, thread {} 's connection has been closed!",
-                    connectionBean.getHost(),
-                    Thread.currentThread().getName());
-            return;
-        }
-        synchronized (managerBean.getLock()) {
-            operationFactory.releaseAConnection(managerBean);
-        }
+        releaseOrShutdownConnection(connectionBean, false);
     }
 
     /**
      * Close connection.
      *
      * @param connectionBean the connection bean
-     * @throws ConnectionException the connection exception
      */
     @Override
     public void closeConnection(ConnectionBean connectionBean) {
         connectionMonitor.notifyObservers(this, connectionBean, connections);
+        releaseOrShutdownConnection(connectionBean, true);
+    }
+
+    private void releaseOrShutdownConnection(ConnectionBean connectionBean, boolean isShutdown) {
         Map<Thread, ManagerBean> threadManagerBeanMap = connections.get(connectionBean);
         if (null == threadManagerBeanMap) {
             LOG.info("Then host {}, thread {} 's do not has any connections!",
@@ -162,7 +138,11 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
             return;
         }
         synchronized (managerBean.getLock()) {
-            operationFactory.closeAConnection(Thread.currentThread(), threadManagerBeanMap);
+            if (isShutdown) {
+                operationFactory.closeAConnection(Thread.currentThread(), threadManagerBeanMap);
+            } else {
+                operationFactory.releaseAConnection(managerBean);
+            }
         }
     }
 
@@ -281,6 +261,7 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
          */
         public BasicSftpClientConnectionManagerBuilder setSchedulePeriodTimeMS(long schedulePeriodTimeMS) {
             connectionManagerConfig.setSchedulePeriodTimeMS(schedulePeriodTimeMS);
+            connectionMonitor.setIntervalTimeSecond(schedulePeriodTimeMS);
             return this;
         }
 
@@ -301,7 +282,7 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
          * @return the basic sftp client connection manager
          */
         public BasicSftpClientConnectionManager build() {
-            return new BasicSftpClientConnectionManager(connectionManagerConfig);
+            return new BasicSftpClientConnectionManager();
         }
     }
 
