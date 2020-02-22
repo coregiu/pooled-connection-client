@@ -3,7 +3,7 @@ package com.xvzhu.connections.sftp;
 import com.jcraft.jsch.JSchException;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
-import com.xvzhu.connections.apis.ISftpConnection;
+import com.xvzhu.connections.apis.protocol.ISftpConnection;
 import com.xvzhu.connections.data.ConnectionBeanBuilder;
 import com.xvzhu.connections.mockserver.SftpServer;
 import org.apache.commons.pool2.PooledObject;

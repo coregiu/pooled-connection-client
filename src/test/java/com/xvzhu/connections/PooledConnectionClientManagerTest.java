@@ -3,7 +3,7 @@ package com.xvzhu.connections;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.IConnectionManager;
-import com.xvzhu.connections.apis.ISftpConnection;
+import com.xvzhu.connections.apis.protocol.ISftpConnection;
 import com.xvzhu.connections.data.ConnectionBeanBuilder;
 import com.xvzhu.connections.mockserver.SftpServer;
 import com.xvzhu.connections.sftp.SftpConnectionFactory;
@@ -57,7 +57,7 @@ public class PooledConnectionClientManagerTest {
     @Test
     public void should_successfully_borrow_connection_when_create_new_pooled_manager() throws ConnectionException {
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
-        IConnectionManager<ISftpConnection> manager = PooledSftpClientConnectionManager.builder()
+        IConnectionManager<ISftpConnection> manager = PooledClientConnectionManager.builder()
                 .setBorrowMaxWaitTimeMS(8000)
                 .setConnectionBean(connectionBean)
                 .build(ISftpConnection.class);

@@ -1,9 +1,9 @@
 package com.xvzhu.connections.monitor;
 
-import com.xvzhu.connections.BasicSftpClientConnectionManager;
+import com.xvzhu.connections.BasicClientConnectionManager;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.IInspect;
-import com.xvzhu.connections.apis.ManagerBean;
+import com.xvzhu.connections.apis.ConnectionManagerBean;
 import lombok.NonNull;
 
 import java.util.Map;
@@ -20,8 +20,8 @@ import java.util.function.Consumer;
  */
 public class BasicInspectImpl implements IInspect {
 
-    private Consumer<Map.Entry<ConnectionBean, Map<Thread, ManagerBean>>> releaseConsumer = BasicSftpClientConnectionManager.getReleaseConsumer();
-    private BiConsumer<ConnectionBean, Map<Thread, ManagerBean>> releaseBiConsumer = BasicSftpClientConnectionManager.getReleaseBiConsumer();
+    private Consumer<Map.Entry<ConnectionBean, Map<Thread, ConnectionManagerBean>>> releaseConsumer = BasicClientConnectionManager.getReleaseConsumer();
+    private BiConsumer<ConnectionBean, Map<Thread, ConnectionManagerBean>> releaseBiConsumer = BasicClientConnectionManager.getReleaseBiConsumer();
 
     /**
      * <p>Close timed out and closed connection, clear the manager bean in thread local.<br>
@@ -30,7 +30,7 @@ public class BasicInspectImpl implements IInspect {
      * @param connectionBean the connection bean
      */
     @Override
-    public void inspect(@NonNull ConnectionBean connectionBean, @NonNull Map<ConnectionBean, Map<Thread, ManagerBean>> connections) {
+    public void inspect(@NonNull ConnectionBean connectionBean, @NonNull Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections) {
         releaseBiConsumer.accept(connectionBean, connections.get(connectionBean));
     }
 
@@ -38,8 +38,8 @@ public class BasicInspectImpl implements IInspect {
      * <p>Close all timed out and closed connection of connection manager, clear the manager bean in thread local.</p>
      */
     @Override
-    public void inspect(@NonNull Map<ConnectionBean, Map<Thread, ManagerBean>> connections) {
-        releaseConsumer = BasicSftpClientConnectionManager.getReleaseConsumer();
+    public void inspect(@NonNull Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections) {
+        releaseConsumer = BasicClientConnectionManager.getReleaseConsumer();
         connections.entrySet().stream().forEach(releaseConsumer);
     }
 }

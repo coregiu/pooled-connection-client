@@ -3,7 +3,7 @@ package com.xvzhu.connections;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.IConnectionManager;
-import com.xvzhu.connections.apis.ISftpConnection;
+import com.xvzhu.connections.apis.protocol.ISftpConnection;
 import com.xvzhu.connections.data.ConnectionBeanBuilder;
 import com.xvzhu.connections.mockserver.SftpServer;
 import com.xvzhu.connections.sftp.SftpConnectionFactory;
@@ -28,7 +28,7 @@ import static org.junit.Assert.assertTrue;
  * @version V1.0
  * @since Date : 2020-02-15 17:02
  */
-public class BasicSftpClientConnectionManagerTest {
+public class BasicConnectionClientManagerTest {
     private static final Logger LOG = LoggerFactory.getLogger(SftpImplTest.class);
 
     @Rule
@@ -59,7 +59,7 @@ public class BasicSftpClientConnectionManagerTest {
 
     @Test
     public void should_successfully_create_connection_when_create_new_basic_manager() throws ConnectionException {
-        IConnectionManager manager = BasicSftpClientConnectionManager.builder()
+        IConnectionManager manager = BasicClientConnectionManager.builder()
                 .setMaxConnectionSize(8)
                 .setAutoInspect(false)
                 .setBorrowTimeoutMS(36000)
@@ -82,7 +82,7 @@ public class BasicSftpClientConnectionManagerTest {
     public void should_failed_to_borrow_connection_when_connections_size_over_limit() throws ConnectionException, InterruptedException {
         expectedException.expect(ConnectionException.class);
         expectedException.expectMessage("Failed to borrow connection because of to much connections.");
-        IConnectionManager manager = BasicSftpClientConnectionManager.builder()
+        IConnectionManager manager = BasicClientConnectionManager.builder()
                 .setMaxConnectionSize(1)
                 .setAutoInspect(false)
                 .build();
@@ -103,7 +103,7 @@ public class BasicSftpClientConnectionManagerTest {
         } finally {
             manager.releaseConnection(connectionBean);
             manager.closeConnection(connectionBean);
-            BasicSftpClientConnectionManager.builder()
+            BasicClientConnectionManager.builder()
                     .setMaxConnectionSize(8)
                     .build();
         }
@@ -111,7 +111,7 @@ public class BasicSftpClientConnectionManagerTest {
 
     @Test
     public void should_not_borrow_when_the_connection_was_borrowed() throws ConnectionException {
-        IConnectionManager manager = BasicSftpClientConnectionManager.builder()
+        IConnectionManager manager = BasicClientConnectionManager.builder()
                 .setAutoInspect(false)
                 .build();
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
@@ -133,7 +133,7 @@ public class BasicSftpClientConnectionManagerTest {
 
     @Test
     public void should_borrow_when_the_connection_was_idle() throws ConnectionException {
-        IConnectionManager manager = BasicSftpClientConnectionManager.builder()
+        IConnectionManager manager = BasicClientConnectionManager.builder()
                 .setAutoInspect(false)
                 .build();
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
@@ -153,7 +153,7 @@ public class BasicSftpClientConnectionManagerTest {
 
     @Test
     public void should_borrow_when_the_connection_was_shutdown() throws ConnectionException {
-        IConnectionManager manager = BasicSftpClientConnectionManager.builder()
+        IConnectionManager manager = BasicClientConnectionManager.builder()
                 .setAutoInspect(false)
                 .build();
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
@@ -174,7 +174,7 @@ public class BasicSftpClientConnectionManagerTest {
 
     @Test
     public void should_auto_release_connections_when_connections_borrow_timed_out() throws ConnectionException, InterruptedException {
-        IConnectionManager manager = BasicSftpClientConnectionManager.builder()
+        IConnectionManager manager = BasicClientConnectionManager.builder()
                 .setBorrowTimeoutMS(1)
                 .setIdleTimeoutSecond(100000)
                 .setSchedulePeriodTimeMS(10)
@@ -193,7 +193,7 @@ public class BasicSftpClientConnectionManagerTest {
         } finally {
             manager.releaseConnection(connectionBean);
             manager.closeConnection(connectionBean);
-            BasicSftpClientConnectionManager.builder()
+            BasicClientConnectionManager.builder()
                     .setBorrowTimeoutMS(3600000)
                     .setIdleTimeoutSecond(100000)
                     .setSchedulePeriodTimeMS(60000)
@@ -204,7 +204,7 @@ public class BasicSftpClientConnectionManagerTest {
 
     @Test
     public void should_auto_shutdown_connections_when_connections_idle_timed_out() throws ConnectionException, InterruptedException {
-        IConnectionManager manager = BasicSftpClientConnectionManager.builder()
+        IConnectionManager manager = BasicClientConnectionManager.builder()
                 .setBorrowTimeoutMS(1)
                 .setIdleTimeoutSecond(1)
                 .setSchedulePeriodTimeMS(10)
@@ -223,7 +223,7 @@ public class BasicSftpClientConnectionManagerTest {
         } finally {
             manager.releaseConnection(connectionBean);
             manager.closeConnection(connectionBean);
-            BasicSftpClientConnectionManager.builder()
+            BasicClientConnectionManager.builder()
                     .setBorrowTimeoutMS(3600000)
                     .setIdleTimeoutSecond(100000)
                     .setSchedulePeriodTimeMS(60000)

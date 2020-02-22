@@ -21,5 +21,5 @@ public interface IObserver extends Runnable {
      */
     void visit(@NonNull IConnectionManager connectionManager,
                @NonNull ConnectionBean connectionBean,
-               @NonNull Map<ConnectionBean, Map<Thread, ManagerBean>> connections);
+               @NonNull Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections);
 }

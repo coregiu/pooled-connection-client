@@ -3,11 +3,11 @@ package com.xvzhu.connections;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.ConnectionManagerConfig;
-import com.xvzhu.connections.apis.IConnection;
+import com.xvzhu.connections.apis.protocol.IConnection;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.IConnectionMonitor;
 import com.xvzhu.connections.apis.IObserver;
-import com.xvzhu.connections.apis.ISftpConnection;
+import com.xvzhu.connections.apis.protocol.ISftpConnection;
 import com.xvzhu.connections.monitor.ConnectionMonitor;
 import com.xvzhu.connections.sftp.SftpConnectionFactory;
 import org.apache.commons.pool2.impl.AbandonedConfig;
@@ -26,8 +26,8 @@ import java.util.Locale;
  * @version V1.0
  * @since Date : 2020-02-16 14:00
  */
-public class PooledSftpClientConnectionManager<T extends IConnection> implements IConnectionManager {
-    private static final Logger LOG = LoggerFactory.getLogger(BasicSftpClientConnectionManager.class);
+public class PooledClientConnectionManager<T extends IConnection> implements IConnectionManager {
+    private static final Logger LOG = LoggerFactory.getLogger(BasicClientConnectionManager.class);
 
     private static ConnectionManagerConfig connectionManagerConfig = ConnectionManagerConfig.builder().build();
 
@@ -40,7 +40,7 @@ public class PooledSftpClientConnectionManager<T extends IConnection> implements
      *
      * @param connectionPool the connection pool
      */
-    public PooledSftpClientConnectionManager(GenericObjectPool<T> connectionPool) {
+    public PooledClientConnectionManager(GenericObjectPool<T> connectionPool) {
         this.connectionPool = connectionPool;
     }
 
@@ -175,12 +175,12 @@ public class PooledSftpClientConnectionManager<T extends IConnection> implements
          * @return the pooled sftp client connection manager
          * @throws ConnectionException the connection exception
          */
-        public PooledSftpClientConnectionManager<T> build(Class<T> type) throws ConnectionException {
+        public PooledClientConnectionManager<T> build(Class<T> type) throws ConnectionException {
             if (ISftpConnection.class.equals(type)) {
                 SftpConnectionFactory sftpConnectionFactory = SftpConnectionFactory.builder().connectionBean(connectionBean).build();
                 GenericObjectPool<T> connectionPool = new GenericObjectPool(sftpConnectionFactory, connectionConfig, abandonedConfig);
 
-                return new PooledSftpClientConnectionManager(connectionPool);
+                return new PooledClientConnectionManager(connectionPool);
             }
             throw new ConnectionException(String.format(Locale.ENGLISH, "Protocol %s was not supported", ISftpConnection.class.getName()));
         }

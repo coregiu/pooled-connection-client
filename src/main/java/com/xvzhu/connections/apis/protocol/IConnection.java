@@ -1,4 +1,4 @@
-package com.xvzhu.connections.apis;
+package com.xvzhu.connections.apis.protocol;
 
 /**
  * Connection API.

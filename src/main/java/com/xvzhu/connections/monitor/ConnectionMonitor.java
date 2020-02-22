@@ -5,7 +5,7 @@ import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.IConnectionMonitor;
 import com.xvzhu.connections.apis.IObserver;
-import com.xvzhu.connections.apis.ManagerBean;
+import com.xvzhu.connections.apis.ConnectionManagerBean;
 import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -116,7 +116,7 @@ public class ConnectionMonitor implements IConnectionMonitor {
      */
     public void notifyObservers(@NonNull IConnectionManager connectionManager,
                                 @NonNull ConnectionBean connectionBean,
-                                @NonNull Map<ConnectionBean, Map<Thread, ManagerBean>> connections) {
+                                @NonNull Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections) {
         LOG.info("Begin to inspect the connection by notify.");
         if (connections.isEmpty()) {
             LOG.warn("Not connections to handle.");

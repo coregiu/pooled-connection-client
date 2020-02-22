@@ -1,11 +1,9 @@
 package com.xvzhu.connections.monitor;
 
-import com.xvzhu.connections.BasicSftpClientConnectionManager;
+import com.xvzhu.connections.BasicClientConnectionManager;
 import com.xvzhu.connections.apis.ConnectionBean;
-import com.xvzhu.connections.apis.ConnectionManagerConfig;
 import com.xvzhu.connections.apis.IConnectionManager;
-import com.xvzhu.connections.apis.IObserver;
-import com.xvzhu.connections.apis.ManagerBean;
+import com.xvzhu.connections.apis.ConnectionManagerBean;
 import com.xvzhu.connections.data.ConnectionBeanBuilder;
 import org.junit.Test;
 
@@ -29,17 +27,17 @@ public class LogObserverTest {
     @Test
     public void should_print_logs_when_manager_is_correct() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         LogObserver logObserver = new LogObserver();
-        IConnectionManager connectionManager = BasicSftpClientConnectionManager.builder().build();
+        IConnectionManager connectionManager = BasicClientConnectionManager.builder().build();
         Method statisticMethod = logObserver.getClass().getDeclaredMethod("getStatisticInfo", IConnectionManager.class, Map.class);
         Method visitMethod = logObserver.getClass().getDeclaredMethod("visit", IConnectionManager.class, ConnectionBean.class, Map.class);
 
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().build().getConnectionBean();
-        Map<Thread, ManagerBean> managerMap = new HashMap<>();
+        Map<Thread, ConnectionManagerBean> managerMap = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
-        ManagerBean managerBean = ManagerBean.builder().borrowTime(timeNow - 100000).build();
+        ConnectionManagerBean managerBean = ConnectionManagerBean.builder().borrowTime(timeNow - 100000).build();
         managerMap.put(Thread.currentThread(), managerBean);
 
-        Map<ConnectionBean, Map<Thread, ManagerBean>> connections = new HashMap<>();
+        Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
         connections.put(connectionBean, managerMap);
 
         statisticMethod.setAccessible(true);

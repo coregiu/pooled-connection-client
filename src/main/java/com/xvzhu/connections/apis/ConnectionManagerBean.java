@@ -1,5 +1,6 @@
 package com.xvzhu.connections.apis;
 
+import com.xvzhu.connections.apis.protocol.ISftpConnection;
 import lombok.Builder;
 import lombok.Data;
 import java.util.Calendar;
@@ -11,7 +12,7 @@ import java.util.Calendar;
  */
 @Data
 @Builder
-public class ManagerBean {
+public class ConnectionManagerBean {
     @Builder.Default
     private Object lock = new Object();
     private ISftpConnection sftpConnection;

@@ -1,11 +1,11 @@
 package com.xvzhu.connections.monitor;
 
-import com.xvzhu.connections.BasicSftpClientConnectionManager;
+import com.xvzhu.connections.BasicClientConnectionManager;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionManagerConfig;
 import com.xvzhu.connections.apis.IInspect;
-import com.xvzhu.connections.apis.ISftpConnection;
-import com.xvzhu.connections.apis.ManagerBean;
+import com.xvzhu.connections.apis.protocol.ISftpConnection;
+import com.xvzhu.connections.apis.ConnectionManagerBean;
 import com.xvzhu.connections.data.ConnectionBeanBuilder;
 import mockit.Capturing;
 import org.junit.Test;
@@ -35,12 +35,12 @@ public class BasicInspectImplTest {
     @Test
     public void should_release_connection_to_manager_when_borrow_timed_out() {
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().build().getConnectionBean();
-        Map<Thread, ManagerBean> managerMap = new HashMap<>();
+        Map<Thread, ConnectionManagerBean> managerMap = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
-        ManagerBean managerBean = ManagerBean.builder().borrowTime(timeNow - connectionManagerConfig.getBorrowTimeoutMS() - 100000).build();
+        ConnectionManagerBean managerBean = ConnectionManagerBean.builder().borrowTime(timeNow - connectionManagerConfig.getBorrowTimeoutMS() - 100000).build();
         managerMap.put(Thread.currentThread(), managerBean);
 
-        Map<ConnectionBean, Map<Thread, ManagerBean>> connections = new HashMap<>();
+        Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
         connections.put(connectionBean, managerMap);
 
         inspect.inspect(connectionBean, connections);
@@ -50,12 +50,12 @@ public class BasicInspectImplTest {
     @Test
     public void should_not_release_connection_to_manager_when_borrow_time_not_out() {
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().build().getConnectionBean();
-        Map<Thread, ManagerBean> managerMap = new HashMap<>();
+        Map<Thread, ConnectionManagerBean> managerMap = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
-        ManagerBean managerBean = ManagerBean.builder().borrowTime(timeNow).build();
+        ConnectionManagerBean managerBean = ConnectionManagerBean.builder().borrowTime(timeNow).build();
         managerMap.put(Thread.currentThread(), managerBean);
 
-        Map<ConnectionBean, Map<Thread, ManagerBean>> connections = new HashMap<>();
+        Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
         connections.put(connectionBean, managerMap);
 
         inspect.inspect(connectionBean, connections);
@@ -65,16 +65,16 @@ public class BasicInspectImplTest {
     @Test
     public void should_shutdown_connection_to_manager_when_idle_timed_out() {
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().build().getConnectionBean();
-        Map<Thread, ManagerBean> managerMap = new HashMap<>();
+        Map<Thread, ConnectionManagerBean> managerMap = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
-        ManagerBean managerBean = ManagerBean.builder()
+        ConnectionManagerBean managerBean = ConnectionManagerBean.builder()
                 .isConnectionBorrowed(false)
                 .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() - 10000)
                 .sftpConnection(sftpConnection)
                 .build();
         managerMap.put(Thread.currentThread(), managerBean);
 
-        Map<ConnectionBean, Map<Thread, ManagerBean>> connections = new HashMap<>();
+        Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
         connections.put(connectionBean, managerMap);
 
         inspect.inspect(connectionBean, connections);
@@ -84,15 +84,15 @@ public class BasicInspectImplTest {
     @Test
     public void should_not_shutdown_connection_to_manager_when_idle_time_not_out() {
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().build().getConnectionBean();
-        Map<Thread, ManagerBean> managerMap = new HashMap<>();
+        Map<Thread, ConnectionManagerBean> managerMap = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
-        ManagerBean managerBean = ManagerBean.builder()
+        ConnectionManagerBean managerBean = ConnectionManagerBean.builder()
                 .isConnectionBorrowed(false)
                 .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() + 1000)
                 .build();
         managerMap.put(Thread.currentThread(), managerBean);
 
-        Map<ConnectionBean, Map<Thread, ManagerBean>> connections = new HashMap<>();
+        Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
         connections.put(connectionBean, managerMap);
 
         inspect.inspect(connectionBean, connections);
@@ -102,22 +102,22 @@ public class BasicInspectImplTest {
     @Test
     public void should_release_all_connection_to_manager_when_borrow_timed_out() {
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().host("192.168.0.1").build().getConnectionBean();
-        Map<Thread, ManagerBean> managerMap = new HashMap<>();
+        Map<Thread, ConnectionManagerBean> managerMap = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
-        ManagerBean managerBean = ManagerBean.builder().borrowTime(timeNow - connectionManagerConfig.getBorrowTimeoutMS() - 100000).build();
+        ConnectionManagerBean managerBean = ConnectionManagerBean.builder().borrowTime(timeNow - connectionManagerConfig.getBorrowTimeoutMS() - 100000).build();
         managerMap.put(Thread.currentThread(), managerBean);
 
         ConnectionBean connectionBean2 = ConnectionBeanBuilder.builder().host("192.168.0.2").build().getConnectionBean();
-        Map<Thread, ManagerBean> managerMap2 = new HashMap<>();
-        ManagerBean managerBean2 = ManagerBean.builder().borrowTime(timeNow - connectionManagerConfig.getBorrowTimeoutMS() - 100000).build();
+        Map<Thread, ConnectionManagerBean> managerMap2 = new HashMap<>();
+        ConnectionManagerBean managerBean2 = ConnectionManagerBean.builder().borrowTime(timeNow - connectionManagerConfig.getBorrowTimeoutMS() - 100000).build();
         managerMap2.put(Thread.currentThread(), managerBean2);
 
         ConnectionBean connectionBean3 = ConnectionBeanBuilder.builder().host("192.168.0.3").build().getConnectionBean();
-        Map<Thread, ManagerBean> managerMap3 = new HashMap<>();
-        ManagerBean managerBean3 = ManagerBean.builder().borrowTime(timeNow).build();
+        Map<Thread, ConnectionManagerBean> managerMap3 = new HashMap<>();
+        ConnectionManagerBean managerBean3 = ConnectionManagerBean.builder().borrowTime(timeNow).build();
         managerMap3.put(Thread.currentThread(), managerBean3);
 
-        Map<ConnectionBean, Map<Thread, ManagerBean>> connections = new HashMap<>();
+        Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
         connections.put(connectionBean, managerMap);
         connections.put(connectionBean2, managerMap2);
         connections.put(connectionBean3, managerMap3);
@@ -131,9 +131,9 @@ public class BasicInspectImplTest {
     @Test
     public void should_shutdown_all_connection_to_manager_when_idle_timed_out() {
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().host("192.168.0.1").build().getConnectionBean();
-        Map<Thread, ManagerBean> managerMap = new HashMap<>();
+        Map<Thread, ConnectionManagerBean> managerMap = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
-        ManagerBean managerBean = ManagerBean.builder()
+        ConnectionManagerBean managerBean = ConnectionManagerBean.builder()
                 .isConnectionBorrowed(false)
                 .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() - 10000)
                 .sftpConnection(sftpConnection)
@@ -141,8 +141,8 @@ public class BasicInspectImplTest {
         managerMap.put(Thread.currentThread(), managerBean);
 
         ConnectionBean connectionBean2 = ConnectionBeanBuilder.builder().host("192.168.0.2").build().getConnectionBean();
-        Map<Thread, ManagerBean> managerMap2 = new HashMap<>();
-        ManagerBean managerBean2 = ManagerBean.builder()
+        Map<Thread, ConnectionManagerBean> managerMap2 = new HashMap<>();
+        ConnectionManagerBean managerBean2 = ConnectionManagerBean.builder()
                 .isConnectionBorrowed(false)
                 .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() - 10000)
                 .sftpConnection(sftpConnection)
@@ -150,15 +150,15 @@ public class BasicInspectImplTest {
         managerMap2.put(Thread.currentThread(), managerBean2);
 
         ConnectionBean connectionBean3 = ConnectionBeanBuilder.builder().host("192.168.0.3").build().getConnectionBean();
-        Map<Thread, ManagerBean> managerMap3 = new HashMap<>();
-        ManagerBean managerBean3 = ManagerBean.builder()
+        Map<Thread, ConnectionManagerBean> managerMap3 = new HashMap<>();
+        ConnectionManagerBean managerBean3 = ConnectionManagerBean.builder()
                 .isConnectionBorrowed(false)
                 .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() + 1000)
                 .sftpConnection(sftpConnection)
                 .build();
         managerMap3.put(Thread.currentThread(), managerBean3);
 
-        Map<ConnectionBean, Map<Thread, ManagerBean>> connections = new HashMap<>();
+        Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
         connections.put(connectionBean, managerMap);
         connections.put(connectionBean2, managerMap2);
         connections.put(connectionBean3, managerMap3);
@@ -171,11 +171,11 @@ public class BasicInspectImplTest {
 
     @Test
     public void should_shutdown_all_connection_to_manager_when_connections_more_than_limited_size() {
-        BasicSftpClientConnectionManager.builder().setMaxConnectionSize(3);
+        BasicClientConnectionManager.builder().setMaxConnectionSize(3);
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().host("192.168.0.1").build().getConnectionBean();
-        Map<Thread, ManagerBean> managerMap = new HashMap<>();
+        Map<Thread, ConnectionManagerBean> managerMap = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
-        ManagerBean managerBean = ManagerBean.builder()
+        ConnectionManagerBean managerBean = ConnectionManagerBean.builder()
                 .isConnectionBorrowed(false)
                 .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() - 10000)
                 .sftpConnection(sftpConnection)
@@ -183,8 +183,8 @@ public class BasicInspectImplTest {
         managerMap.put(Thread.currentThread(), managerBean);
 
         ConnectionBean connectionBean2 = ConnectionBeanBuilder.builder().host("192.168.0.2").build().getConnectionBean();
-        Map<Thread, ManagerBean> managerMap2 = new HashMap<>();
-        ManagerBean managerBean2 = ManagerBean.builder()
+        Map<Thread, ConnectionManagerBean> managerMap2 = new HashMap<>();
+        ConnectionManagerBean managerBean2 = ConnectionManagerBean.builder()
                 .isConnectionBorrowed(false)
                 .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() - 10000)
                 .sftpConnection(sftpConnection)
@@ -192,8 +192,8 @@ public class BasicInspectImplTest {
         managerMap2.put(Thread.currentThread(), managerBean2);
 
         ConnectionBean connectionBean3 = ConnectionBeanBuilder.builder().host("192.168.0.3").build().getConnectionBean();
-        Map<Thread, ManagerBean> managerMap3 = new HashMap<>();
-        ManagerBean managerBean3 = ManagerBean.builder()
+        Map<Thread, ConnectionManagerBean> managerMap3 = new HashMap<>();
+        ConnectionManagerBean managerBean3 = ConnectionManagerBean.builder()
                 .isConnectionBorrowed(false)
                 .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() + 1000)
                 .sftpConnection(sftpConnection)
@@ -201,15 +201,15 @@ public class BasicInspectImplTest {
         managerMap3.put(Thread.currentThread(), managerBean3);
 
         ConnectionBean connectionBean4 = ConnectionBeanBuilder.builder().host("192.168.0.4").build().getConnectionBean();
-        Map<Thread, ManagerBean> managerMap4 = new HashMap<>();
-        ManagerBean managerBean4 = ManagerBean.builder()
+        Map<Thread, ConnectionManagerBean> managerMap4 = new HashMap<>();
+        ConnectionManagerBean managerBean4 = ConnectionManagerBean.builder()
                 .isConnectionBorrowed(false)
                 .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() + 1000)
                 .sftpConnection(sftpConnection)
                 .build();
         managerMap4.put(Thread.currentThread(), managerBean4);
 
-        Map<ConnectionBean, Map<Thread, ManagerBean>> connections = new HashMap<>();
+        Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
         connections.put(connectionBean, managerMap);
         connections.put(connectionBean2, managerMap2);
         connections.put(connectionBean3, managerMap3);

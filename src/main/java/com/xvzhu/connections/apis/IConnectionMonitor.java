@@ -28,7 +28,7 @@ public interface IConnectionMonitor {
      */
     void notifyObservers(@NonNull IConnectionManager connectionManager,
                          @NonNull ConnectionBean connectionBean,
-                         @NonNull Map<ConnectionBean, Map<Thread, ManagerBean>> connections);
+                         @NonNull Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections);
 
     /**
      * <p>Get schedule interval time (second).</p>

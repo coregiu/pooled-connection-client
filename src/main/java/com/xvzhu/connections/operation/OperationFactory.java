@@ -4,8 +4,8 @@ import com.jcraft.jsch.JSchException;
 import com.xvzhu.connections.apis.ConnectionConst;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionManagerConfig;
-import com.xvzhu.connections.apis.ISftpConnection;
-import com.xvzhu.connections.apis.ManagerBean;
+import com.xvzhu.connections.apis.protocol.ISftpConnection;
+import com.xvzhu.connections.apis.ConnectionManagerBean;
 import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +45,7 @@ public class OperationFactory {
      *
      * @return the release consumer
      */
-    public Consumer<Map.Entry<ConnectionBean, Map<Thread, ManagerBean>>> getReleaseConsumer() {
+    public Consumer<Map.Entry<ConnectionBean, Map<Thread, ConnectionManagerBean>>> getReleaseConsumer() {
         return entry -> releaseSftpConnection(entry.getKey(), entry.getValue());
     }
 
@@ -54,7 +54,7 @@ public class OperationFactory {
      *
      * @return the release biConsumer
      */
-    public BiConsumer<ConnectionBean, Map<Thread, ManagerBean>> getReleaseBiConsumer() {
+    public BiConsumer<ConnectionBean, Map<Thread, ConnectionManagerBean>> getReleaseBiConsumer() {
         return this::releaseSftpConnection;
     }
 
@@ -63,7 +63,7 @@ public class OperationFactory {
      *
      * @param managerBean the manager bean
      */
-    public void releaseAConnection(@NonNull ManagerBean managerBean) {
+    public void releaseAConnection(@NonNull ConnectionManagerBean managerBean) {
         managerBean.setReleaseTime(Calendar.getInstance().getTimeInMillis());
         managerBean.setConnectionBorrowed(false);
     }
@@ -75,9 +75,9 @@ public class OperationFactory {
      * @param hostConnectionMap the host connection map
      */
     public void closeAConnection(@NonNull Thread thread,
-                                 @NonNull Map<Thread, ManagerBean> hostConnectionMap) {
+                                 @NonNull Map<Thread, ConnectionManagerBean> hostConnectionMap) {
         try {
-            ManagerBean managerBean = hostConnectionMap.get(thread);
+            ConnectionManagerBean managerBean = hostConnectionMap.get(thread);
             // double check.
             if (managerBean == null) {
                 LOG.info("Then thread {} 's connection has been closed!", thread);
@@ -95,7 +95,7 @@ public class OperationFactory {
     }
 
     private void releaseSftpConnection(ConnectionBean connectionBean,
-                                       Map<Thread, ManagerBean> hostConnectionMap) {
+                                       Map<Thread, ConnectionManagerBean> hostConnectionMap) {
         if (Thread.currentThread().getName().equals(ConnectionConst.SCHEDULE_THREAD_NAME)) {
             synchronized (LOCK) {
                 releaseAllConnections(connectionBean, hostConnectionMap);
@@ -104,7 +104,7 @@ public class OperationFactory {
             if (hostConnectionMap == null || hostConnectionMap.get(Thread.currentThread()) == null) {
                 return;
             }
-            ManagerBean managerBean = hostConnectionMap.get(Thread.currentThread());
+            ConnectionManagerBean managerBean = hostConnectionMap.get(Thread.currentThread());
             synchronized (managerBean.getLock()) {
                 releaseCurrentConnection(hostConnectionMap);
             }
@@ -112,7 +112,7 @@ public class OperationFactory {
     }
 
     private void releaseAllConnections(ConnectionBean connectionBean,
-                                       Map<Thread, ManagerBean> hostConnectionMap) {
+                                       Map<Thread, ConnectionManagerBean> hostConnectionMap) {
         LOG.debug("begin to release all the connections of host: {}", connectionBean.getHost());
         long timeNow = Calendar.getInstance().getTimeInMillis();
         // 1. Release timed out and closed connections. Contains reuse and close time out.
@@ -123,7 +123,7 @@ public class OperationFactory {
                 .count();
         LOG.warn("release size = {}", releaseSize);
 
-        Set<Map.Entry<Thread, ManagerBean>> closeSet
+        Set<Map.Entry<Thread, ConnectionManagerBean>> closeSet
                 = new HashSet<>(hostConnectionMap.size());
         hostConnectionMap.entrySet().stream()
                 .filter(entry -> (!entry.getValue().isConnectionBorrowed()) &&
@@ -137,7 +137,7 @@ public class OperationFactory {
         if (hostConnectionRemainSize <= 0) {
             return;
         }
-        Set<Map.Entry<Thread, ManagerBean>> clearSet
+        Set<Map.Entry<Thread, ConnectionManagerBean>> clearSet
                 = new HashSet<>(hostConnectionMap.size());
         hostConnectionMap.entrySet().stream()
                 .filter(entry -> (!entry.getValue().isConnectionBorrowed()))
@@ -150,9 +150,9 @@ public class OperationFactory {
         return timeNow - checkTime > timedout;
     }
 
-    private void releaseCurrentConnection(Map<Thread, ManagerBean> hostConnectionMap) {
+    private void releaseCurrentConnection(Map<Thread, ConnectionManagerBean> hostConnectionMap) {
         Thread releaseThread = Thread.currentThread();
-        ManagerBean managerBean = hostConnectionMap.get(Thread.currentThread());
+        ConnectionManagerBean managerBean = hostConnectionMap.get(Thread.currentThread());
         long timeNow = Calendar.getInstance().getTimeInMillis();
 
         if (managerBean.isConnectionBorrowed() && isTimedOut(timeNow,

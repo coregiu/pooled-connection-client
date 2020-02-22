@@ -1,10 +1,10 @@
 package com.xvzhu.connections.monitor;
 
-import com.xvzhu.connections.BasicSftpClientConnectionManager;
+import com.xvzhu.connections.BasicClientConnectionManager;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.IObserver;
-import com.xvzhu.connections.apis.ManagerBean;
+import com.xvzhu.connections.apis.ConnectionManagerBean;
 import com.xvzhu.connections.data.ConnectionBeanBuilder;
 import lombok.NonNull;
 import org.junit.Test;
@@ -22,15 +22,15 @@ import static org.junit.Assert.assertNotNull;
 public class ConnectionMonitorTest {
     @Test
     public void should_notify_all_observers_when_notified_from_biz() {
-        IConnectionManager connectionManager = BasicSftpClientConnectionManager.builder().build();
+        IConnectionManager connectionManager = BasicClientConnectionManager.builder().build();
         ConnectionMonitor connectionMonitor = ConnectionMonitor.getInstance();
         connectionMonitor.attach(new BizObserver());
 
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().build().getConnectionBean();
-        Map<Thread, ManagerBean> managerMap = new HashMap<>();
-        ManagerBean managerBean = ManagerBean.builder().build();
+        Map<Thread, ConnectionManagerBean> managerMap = new HashMap<>();
+        ConnectionManagerBean managerBean = ConnectionManagerBean.builder().build();
         managerMap.put(Thread.currentThread(), managerBean);
-        Map<ConnectionBean, Map<Thread, ManagerBean>> connections = new HashMap<>();
+        Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
         connections.put(connectionBean, managerMap);
 
         connectionMonitor.notifyObservers(connectionManager, connectionBean, connections);
@@ -42,10 +42,10 @@ public class ConnectionMonitorTest {
     static class BizObserver implements IObserver{
 
         @Override
-        public void visit(@NonNull IConnectionManager connectionManager, @NonNull ConnectionBean connectionBean, @NonNull Map<ConnectionBean, Map<Thread, ManagerBean>> connections) {
+        public void visit(@NonNull IConnectionManager connectionManager, @NonNull ConnectionBean connectionBean, @NonNull Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections) {
             ConnectionBean connectionBean1 = ConnectionBeanBuilder.builder().host("101.10.10.10").build().getConnectionBean();
-            Map<Thread, ManagerBean> managerMap = new HashMap<>();
-            ManagerBean managerBean = ManagerBean.builder().build();
+            Map<Thread, ConnectionManagerBean> managerMap = new HashMap<>();
+            ConnectionManagerBean managerBean = ConnectionManagerBean.builder().build();
             managerMap.put(Thread.currentThread(), managerBean);
             connections.put(connectionBean1, managerMap);
         }

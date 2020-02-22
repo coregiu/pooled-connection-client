@@ -1,5 +1,7 @@
 package com.xvzhu.connections.apis;
 
+import com.xvzhu.connections.apis.protocol.IConnection;
+
 /**
  * Manager API.
  *
