@@ -35,6 +35,7 @@ public class BasicSftpClientConnectionManagerTest {
     public ExpectedException expectedException = ExpectedException.none();
     private SftpServer sftpServer;
     private ISftpConnection sftpConnection;
+    private int port;
 
     @Before
     public void sftpImplTest() throws InterruptedException, ConnectionException {
@@ -44,7 +45,7 @@ public class BasicSftpClientConnectionManagerTest {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         sftpServer.setupSftpServer(uuid, countDownLatch);
         countDownLatch.await();
-        int port = sftpServer.getPort(uuid);
+         port = sftpServer.getPort(uuid);
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
         sftpConnection = SftpConnectionFactory.builder().connectionBean(connectionBean).build().create();
     }
@@ -66,7 +67,7 @@ public class BasicSftpClientConnectionManagerTest {
                 .setSchedulePeriodTimeMS(6000L)
                 .setConnectionTimeoutMs(60000)
                 .build();
-        ConnectionBean connectionBean = ConnectionBeanBuilder.builder().build().getConnectionBean();
+        ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
         try {
             ISftpConnection sftpConnection = (ISftpConnection) manager.borrowConnection(connectionBean);
             LOG.error("current path = {}", sftpConnection.currentDirectory());
@@ -85,7 +86,7 @@ public class BasicSftpClientConnectionManagerTest {
                 .setMaxConnectionSize(1)
                 .setAutoInspect(false)
                 .build();
-        ConnectionBean connectionBean = ConnectionBeanBuilder.builder().build().getConnectionBean();
+        ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
         CountDownLatch countDownLatch = new CountDownLatch(1);
         try {
             new Thread(() -> {
@@ -103,7 +104,8 @@ public class BasicSftpClientConnectionManagerTest {
             manager.releaseConnection(connectionBean);
             manager.closeConnection(connectionBean);
             BasicSftpClientConnectionManager.builder()
-                    .setMaxConnectionSize(8).build();
+                    .setMaxConnectionSize(8)
+                    .build();
         }
     }
 
@@ -112,7 +114,7 @@ public class BasicSftpClientConnectionManagerTest {
         IConnectionManager manager = BasicSftpClientConnectionManager.builder()
                 .setAutoInspect(false)
                 .build();
-        ConnectionBean connectionBean = ConnectionBeanBuilder.builder().build().getConnectionBean();
+        ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
         try {
             ISftpConnection sftpConnection = (ISftpConnection) manager.borrowConnection(connectionBean);
             LOG.error("current path = {}", sftpConnection.currentDirectory());
@@ -134,7 +136,7 @@ public class BasicSftpClientConnectionManagerTest {
         IConnectionManager manager = BasicSftpClientConnectionManager.builder()
                 .setAutoInspect(false)
                 .build();
-        ConnectionBean connectionBean = ConnectionBeanBuilder.builder().build().getConnectionBean();
+        ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
         try {
             ISftpConnection sftpConnection = (ISftpConnection) manager.borrowConnection(connectionBean);
             LOG.error("current path = {}", sftpConnection.currentDirectory());
@@ -154,7 +156,7 @@ public class BasicSftpClientConnectionManagerTest {
         IConnectionManager manager = BasicSftpClientConnectionManager.builder()
                 .setAutoInspect(false)
                 .build();
-        ConnectionBean connectionBean = ConnectionBeanBuilder.builder().build().getConnectionBean();
+        ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
         try {
             ISftpConnection sftpConnection = (ISftpConnection) manager.borrowConnection(connectionBean);
             LOG.error("current path = {}", sftpConnection.currentDirectory());
@@ -178,7 +180,7 @@ public class BasicSftpClientConnectionManagerTest {
                 .setSchedulePeriodTimeMS(10)
                 .setAutoInspect(true)
                 .build();
-        ConnectionBean connectionBean = ConnectionBeanBuilder.builder().build().getConnectionBean();
+        ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
         try {
             ISftpConnection sftpConnection = (ISftpConnection) manager.borrowConnection(connectionBean);
             LOG.error("current path = {}", sftpConnection.currentDirectory());
@@ -191,6 +193,12 @@ public class BasicSftpClientConnectionManagerTest {
         } finally {
             manager.releaseConnection(connectionBean);
             manager.closeConnection(connectionBean);
+            BasicSftpClientConnectionManager.builder()
+                    .setBorrowTimeoutMS(3600000)
+                    .setIdleTimeoutSecond(100000)
+                    .setSchedulePeriodTimeMS(60000)
+                    .setAutoInspect(false)
+                    .build();
         }
     }
 
@@ -202,7 +210,7 @@ public class BasicSftpClientConnectionManagerTest {
                 .setSchedulePeriodTimeMS(10)
                 .setAutoInspect(true)
                 .build();
-        ConnectionBean connectionBean = ConnectionBeanBuilder.builder().build().getConnectionBean();
+        ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
         try {
             ISftpConnection sftpConnection = (ISftpConnection) manager.borrowConnection(connectionBean);
             LOG.error("current path = {}", sftpConnection.currentDirectory());
@@ -215,6 +223,12 @@ public class BasicSftpClientConnectionManagerTest {
         } finally {
             manager.releaseConnection(connectionBean);
             manager.closeConnection(connectionBean);
+            BasicSftpClientConnectionManager.builder()
+                    .setBorrowTimeoutMS(3600000)
+                    .setIdleTimeoutSecond(100000)
+                    .setSchedulePeriodTimeMS(60000)
+                    .setAutoInspect(false)
+                    .build();
         }
     }
 }

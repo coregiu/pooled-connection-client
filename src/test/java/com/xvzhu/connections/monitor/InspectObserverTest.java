@@ -48,7 +48,7 @@ public class InspectObserverTest {
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().build().getConnectionBean();
         Map<Thread, ManagerBean> managerMap = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
-        ManagerBean managerBean = ManagerBean.builder().borrowTime(timeNow - connectionManagerConfig.getBorrowTimeoutMS() + 10000).build();
+        ManagerBean managerBean = ManagerBean.builder().borrowTime(timeNow).build();
         managerMap.put(Thread.currentThread(), managerBean);
 
         Map<ConnectionBean, Map<Thread, ManagerBean>> connections = new HashMap<>();

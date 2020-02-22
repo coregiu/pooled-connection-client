@@ -101,7 +101,7 @@ public class OperationFactoryTest {
         ManagerBean managerBean =
                 ManagerBean.builder()
                         .isConnectionBorrowed(false)
-                        .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutSecond() - 10000)
+                        .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() - 10000)
                         .sftpConnection(sftpConnection)
                         .build();
         managerBeanMap.put(Thread.currentThread(), managerBean);
@@ -194,7 +194,7 @@ public class OperationFactoryTest {
                 ManagerBean.builder()
                         .isConnectionBorrowed(false)
                         .sftpConnection(sftpConnection)
-                        .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutSecond() - 100000)
+                        .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() - 100000)
                         .build();
         managerBeanMap.put(Thread.currentThread(), managerBean);
         connections.put(connectionBean, managerBeanMap);
@@ -205,7 +205,7 @@ public class OperationFactoryTest {
                 ManagerBean.builder()
                         .isConnectionBorrowed(false)
                         .sftpConnection(sftpConnection)
-                        .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutSecond() - 100000)
+                        .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() - 100000)
                         .build();
         managerBeanMap1.put(Thread.currentThread(), managerBean1);
         connections.put(connectionBean1, managerBeanMap1);

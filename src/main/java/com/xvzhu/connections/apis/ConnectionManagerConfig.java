@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * The configuration of Connections.
+ *
  * @author : xvzhu
  * @version V1.0
  * @since Date : 2020-02-16 17:39
@@ -22,6 +23,7 @@ public class ConnectionManagerConfig {
     private static final int DEFAULT_CLOSE_TIME_OUT_MS = 300000;
     private static final long DEFAULT_SCHEDULE_INTERVAL_TIME_MS = 600000L;
     private static final int DEFAULT_MAX_CONNECTION_SIZE = 8;
+    private static final long DEFAULT_BORROW_WAIT_TIME = 60000L;
 
     /**
      * The max size of connections all of current process(ClassLoader).
@@ -41,7 +43,8 @@ public class ConnectionManagerConfig {
      * If time out, close the connection.
      */
     @Builder.Default
-    private int idleTimeoutSecond = DEFAULT_CLOSE_TIME_OUT_MS;
+    private int idleTimeoutMS = DEFAULT_CLOSE_TIME_OUT_MS;
+
     /**
      * Connect timeout configuration for jsch(Millisecond).
      * Default is 5000 million seconds.
@@ -51,7 +54,7 @@ public class ConnectionManagerConfig {
     private int connectionTimeoutMs = ConnectionConst.DEFAULT_CONNECT_TIME_OUT_MS;
 
     /**
-     * The interval of schedule(Millisecond).
+     * The period of schedule(Millisecond).
      * Default is 10 minutes.(600000 ms)
      */
     @Builder.Default
@@ -63,4 +66,11 @@ public class ConnectionManagerConfig {
      */
     @Builder.Default
     private boolean isAutoInspect = true;
+
+    /**
+     * The max wait time for borrow connection(millisecond).
+     * Default is 1 minute.
+     */
+    @Builder.Default
+    private long borrowMaxWaitTimeMS = DEFAULT_BORROW_WAIT_TIME;
 }

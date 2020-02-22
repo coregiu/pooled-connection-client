@@ -24,7 +24,7 @@ public class ConnectionManagerConfigTest {
 
     @Test
     public void should_init_default_idle_time_value_when_default_created() {
-        assertThat(ConnectionManagerConfig.builder().build().getIdleTimeoutSecond(), is(300000));
+        assertThat(ConnectionManagerConfig.builder().build().getIdleTimeoutMS(), is(300000));
     }
 
     @Test
@@ -40,5 +40,10 @@ public class ConnectionManagerConfigTest {
     @Test
     public void should_init_default_auto_inspect_value_when_default_created() {
         assertTrue(ConnectionManagerConfig.builder().build().isAutoInspect());
+    }
+
+    @Test
+    public void should_init_default_borrow_wait_time_value_when_default_created() {
+        assertThat(ConnectionManagerConfig.builder().build().getBorrowMaxWaitTimeMS(), is(60000L));
     }
 }

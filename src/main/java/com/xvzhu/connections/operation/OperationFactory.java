@@ -127,7 +127,7 @@ public class OperationFactory {
                 = new HashSet<>(hostConnectionMap.size());
         hostConnectionMap.entrySet().stream()
                 .filter(entry -> (!entry.getValue().isConnectionBorrowed()) &&
-                        isTimedOut(timeNow, entry.getValue().getReleaseTime(), config.getIdleTimeoutSecond()))
+                        isTimedOut(timeNow, entry.getValue().getReleaseTime(), config.getIdleTimeoutMS()))
                 .forEach(closeSet::add);
         LOG.warn("shutdown size = {}", closeSet.size());
         closeSet.forEach(entry -> closeAConnection(entry.getKey(), hostConnectionMap));
@@ -159,7 +159,7 @@ public class OperationFactory {
                 managerBean.getBorrowTime(), config.getBorrowTimeoutMS())) {
             releaseAConnection(managerBean);
         } else if (!managerBean.isConnectionBorrowed() && isTimedOut(timeNow,
-                managerBean.getReleaseTime(), config.getIdleTimeoutSecond())){
+                managerBean.getReleaseTime(), config.getIdleTimeoutMS())){
             closeAConnection(releaseThread, hostConnectionMap);
         } else {
             LOG.info("Do nothing");

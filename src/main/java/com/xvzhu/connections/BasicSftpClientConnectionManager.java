@@ -238,7 +238,7 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
          * @return the idle timeout second
          */
         public BasicSftpClientConnectionManagerBuilder setIdleTimeoutSecond(int idleTimeoutSecond) {
-            connectionManagerConfig.setIdleTimeoutSecond(idleTimeoutSecond);
+            connectionManagerConfig.setIdleTimeoutMS(idleTimeoutSecond);
             return this;
         }
 

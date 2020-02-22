@@ -118,6 +118,10 @@ public class ConnectionMonitor implements IConnectionMonitor {
                                 @NonNull ConnectionBean connectionBean,
                                 @NonNull Map<ConnectionBean, Map<Thread, ManagerBean>> connections) {
         LOG.info("Begin to inspect the connection by notify.");
+        if (connections.isEmpty()) {
+            LOG.warn("Not connections to handle.");
+            return;
+        }
         for (IObserver observer : observers) {
             observer.visit(connectionManager, connectionBean, connections);
         }
