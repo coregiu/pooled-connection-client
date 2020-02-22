@@ -1,6 +1,7 @@
 package com.xvzhu.connections;
 
 import com.xvzhu.connections.apis.ConnectionBean;
+import com.xvzhu.connections.apis.ConnectionConst;
 import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.ConnectionManagerConfig;
 import com.xvzhu.connections.apis.IConnection;
@@ -8,17 +9,17 @@ import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.IConnectionMonitor;
 import com.xvzhu.connections.apis.IObserver;
 import com.xvzhu.connections.apis.ISftpConnection;
+import com.xvzhu.connections.apis.ManagerBean;
 import com.xvzhu.connections.monitor.ConnectionMonitor;
 import com.xvzhu.connections.operation.OperationFactory;
 import com.xvzhu.connections.sftp.SftpConnectionFactory;
-import lombok.Builder;
-import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Calendar;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -33,6 +34,7 @@ import java.util.function.Consumer;
  */
 public class BasicSftpClientConnectionManager<T extends IConnection> implements IConnectionManager {
     private static final Logger LOG = LoggerFactory.getLogger(BasicSftpClientConnectionManager.class);
+    private static final Object LOCK = new Object();
     private static final int DEFAULT_MAX_CONNECTION_SIZE = 8;
 
     /**
@@ -42,15 +44,15 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
     private static Map<ConnectionBean, Map<Thread, ManagerBean>> connections
             = new ConcurrentHashMap<>(DEFAULT_MAX_CONNECTION_SIZE);
 
+    private static ConnectionManagerConfig connectionManagerConfig = ConnectionManagerConfig.builder().build();
+
+    private static OperationFactory operationFactory = new OperationFactory(connectionManagerConfig);
+
     private static IConnectionMonitor connectionMonitor = ConnectionMonitor.getInstance();
-
-    private static OperationFactory operationFactory;
-
-    private static ConnectionManagerConfig connectionManagerConfig;
 
     private BasicSftpClientConnectionManager(ConnectionManagerConfig connectionManagerConfig) {
         BasicSftpClientConnectionManager.connectionManagerConfig = connectionManagerConfig;
-        connectionMonitor.setIntervalTimeSecond(connectionManagerConfig.getIntervalTimeMS());
+        connectionMonitor.setIntervalTimeSecond(connectionManagerConfig.getSchedulePeriodTimeMS());
         operationFactory = new OperationFactory(connectionManagerConfig);
     }
 
@@ -64,12 +66,21 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
     }
 
     /**
-     * Gets operation factory.
+     * Gets release consumer.
      *
-     * @return the operation factory
+     * @return the release consumer
      */
     public static Consumer<Map.Entry<ConnectionBean, Map<Thread, ManagerBean>>> getReleaseConsumer() {
         return operationFactory.getReleaseConsumer();
+    }
+
+    /**
+     * Gets release bi consumer.
+     *
+     * @return the release bi consumer
+     */
+    public static BiConsumer<ConnectionBean, Map<Thread, ManagerBean>> getReleaseBiConsumer() {
+        return operationFactory.getReleaseBiConsumer();
     }
 
     /**
@@ -81,7 +92,7 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
      */
     @Override
     public T borrowConnection(ConnectionBean connectionBean) throws ConnectionException {
-        connectionMonitor.notifyObservers(this, connectionBean);
+        connectionMonitor.notifyObservers(this, connectionBean, connections);
         Map<Thread, ManagerBean> threadManagerBeanMap = connections.get(connectionBean);
         if (null == threadManagerBeanMap) {
             LOG.info("Then host {}, thread {} 's do not has any connections!",
@@ -105,7 +116,7 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
      */
     @Override
     public void releaseConnection(ConnectionBean connectionBean) {
-        connectionMonitor.notifyObservers(this, connectionBean);
+        connectionMonitor.notifyObservers(this, connectionBean, connections);
         Map<Thread, ManagerBean> threadManagerBeanMap = connections.get(connectionBean);
         if (null == threadManagerBeanMap) {
             LOG.info("Then host {}, thread {} 's do not has any connections!",
@@ -134,7 +145,7 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
      */
     @Override
     public void closeConnection(ConnectionBean connectionBean) {
-        connectionMonitor.notifyObservers(this, connectionBean);
+        connectionMonitor.notifyObservers(this, connectionBean, connections);
         Map<Thread, ManagerBean> threadManagerBeanMap = connections.get(connectionBean);
         if (null == threadManagerBeanMap) {
             LOG.info("Then host {}, thread {} 's do not has any connections!",
@@ -163,7 +174,7 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
      */
     @Override
     public void accept(IObserver observer, ConnectionBean connectionBean) {
-        observer.visit(this, connectionBean);
+        observer.visit(this, connectionBean, connections);
     }
 
     /**
@@ -179,7 +190,7 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
     private T reuseConnection(ConnectionBean connectionBean, ManagerBean managerBean)
             throws ConnectionException {
         synchronized (managerBean.getLock()) {
-            if (managerBean.isConnectionBorrowed) {
+            if (managerBean.isConnectionBorrowed()) {
                 LOG.error("The host : {}, thread :{}'s connection has been borrowed!",
                         connectionBean.getHost(), Thread.currentThread().getName());
                 throw new ConnectionException("The host : %s, thread :%s's connection has been borrowed!",
@@ -195,13 +206,13 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
 
     private T getAndRegisterNewConnection(ConnectionBean connectionBean) throws ConnectionException {
         ManagerBean managerBean;
-        synchronized (this) {
+        synchronized (LOCK) {
             ISftpConnection connection =
                     SftpConnectionFactory.builder()
                             .connectionBean(connectionBean)
                             .timeoutMilliSecond(connectionManagerConfig.getConnectionTimeoutMs()).build().create();
 
-            managerBean = ManagerBean.builder()
+            managerBean = com.xvzhu.connections.apis.ManagerBean.builder()
                     .isConnectionBorrowed(true)
                     .sftpConnection(connection)
                     .build();
@@ -215,36 +226,72 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
     }
 
     /**
-     * The type Manager bean.
-     */
-    @Data
-    @Builder
-    public static class ManagerBean {
-        @Builder.Default
-        private Object lock = new Object();
-        private ISftpConnection sftpConnection;
-        @Builder.Default
-        private long borrowTime = Calendar.getInstance().getTimeInMillis();
-        private long releaseTime;
-        @Builder.Default
-        private boolean isConnectionBorrowed = false;
-    }
-
-    /**
      * The type Basic sftp client connection manager builder.
      */
     public static class BasicSftpClientConnectionManagerBuilder {
-        private ConnectionManagerConfig connectionManagerConfig;
+        /**
+         * Sets max connection size.
+         *
+         * @param maxConnectionSize the max connection size
+         * @return the max connection size
+         */
+        public BasicSftpClientConnectionManagerBuilder setMaxConnectionSize(int maxConnectionSize) {
+            connectionManagerConfig.setMaxConnectionSize(maxConnectionSize);
+            return this;
+        }
 
         /**
-         * Sets connection manager config.
+         * Sets borrow timeout ms.
          *
-         * @param connectionManagerConfig the connection manager config
-         * @return the connection manager config
+         * @param borrowTimeoutMS the borrow timeout ms
+         * @return the borrow timeout ms
          */
-        public BasicSftpClientConnectionManagerBuilder setConnectionManagerConfig(
-                ConnectionManagerConfig connectionManagerConfig) {
-            this.connectionManagerConfig = connectionManagerConfig;
+        public BasicSftpClientConnectionManagerBuilder setBorrowTimeoutMS(int borrowTimeoutMS) {
+            connectionManagerConfig.setBorrowTimeoutMS(borrowTimeoutMS);
+            return this;
+        }
+
+        /**
+         * Sets idle timeout second.
+         *
+         * @param idleTimeoutSecond the idle timeout second
+         * @return the idle timeout second
+         */
+        public BasicSftpClientConnectionManagerBuilder setIdleTimeoutSecond(int idleTimeoutSecond) {
+            connectionManagerConfig.setIdleTimeoutSecond(idleTimeoutSecond);
+            return this;
+        }
+
+        /**
+         * Sets connection timeout ms.
+         *
+         * @param connectionTimeoutMs the connection timeout ms
+         * @return the connection timeout ms
+         */
+        public BasicSftpClientConnectionManagerBuilder setConnectionTimeoutMs(int connectionTimeoutMs) {
+            connectionManagerConfig.setConnectionTimeoutMs(connectionTimeoutMs);
+            return this;
+        }
+
+        /**
+         * Sets schedule period time ms.
+         *
+         * @param schedulePeriodTimeMS the schedule period time ms
+         * @return the schedule period time ms
+         */
+        public BasicSftpClientConnectionManagerBuilder setSchedulePeriodTimeMS(long schedulePeriodTimeMS) {
+            connectionManagerConfig.setSchedulePeriodTimeMS(schedulePeriodTimeMS);
+            return this;
+        }
+
+        /**
+         * Sets auto inspect.
+         *
+         * @param autoInspect the auto inspect
+         * @return the auto inspect
+         */
+        public BasicSftpClientConnectionManagerBuilder setAutoInspect(boolean autoInspect) {
+            connectionManagerConfig.setAutoInspect(autoInspect);
             return this;
         }
 

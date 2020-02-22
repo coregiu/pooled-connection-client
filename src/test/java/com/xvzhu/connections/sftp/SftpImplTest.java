@@ -3,7 +3,7 @@ package com.xvzhu.connections.sftp;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.ISftpConnection;
-import com.xvzhu.connections.data.ConnectBeanBuilder;
+import com.xvzhu.connections.data.ConnectionBeanBuilder;
 import com.xvzhu.connections.mockserver.SftpServer;
 import org.junit.After;
 import org.junit.Before;
@@ -47,7 +47,7 @@ public class SftpImplTest {
         sftpServer.setupSftpServer(uuid, countDownLatch);
         countDownLatch.await();
         int port = sftpServer.getPort(uuid);
-        ConnectionBean connectionBean = ConnectBeanBuilder.builder().port(port).build().getConnectionBean();
+        ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
         sftpConnection = SftpConnectionFactory.builder().connectionBean(connectionBean).build().create();
     }
 

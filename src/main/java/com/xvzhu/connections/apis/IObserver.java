@@ -1,5 +1,9 @@
 package com.xvzhu.connections.apis;
 
+import lombok.NonNull;
+
+import java.util.Map;
+
 /**
  * Observer Interface.
  *
@@ -13,6 +17,9 @@ public interface IObserver extends Runnable {
      *
      * @param connectionManager the connection manager
      * @param connectionBean    the connection bean
+     * @param connections       the connections
      */
-    void visit(IConnectionManager connectionManager, ConnectionBean connectionBean);
+    void visit(@NonNull IConnectionManager connectionManager,
+               @NonNull ConnectionBean connectionBean,
+               @NonNull Map<ConnectionBean, Map<Thread, ManagerBean>> connections);
 }

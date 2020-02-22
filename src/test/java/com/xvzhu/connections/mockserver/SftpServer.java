@@ -1,7 +1,6 @@
 package com.xvzhu.connections.mockserver;
 
 import java.io.IOException;
-import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -13,7 +12,7 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Maps;
 import com.xvzhu.connections.apis.ConnectionException;
-import com.xvzhu.connections.data.ConnectBeanBuilder;
+import com.xvzhu.connections.data.ConnectionBeanBuilder;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.SshServer;
@@ -81,13 +80,13 @@ public class SftpServer {
     private void setupSftpServer(int port) throws ConnectionException {
         startCount.getAndAdd(1);
         sshd.setPort(port);
-        sshd.setHost(ConnectBeanBuilder.HOST);
+        sshd.setHost(ConnectionBeanBuilder.HOST);
         sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
         sshd.setCommandFactory(new ScpCommandFactory());
         List<NamedFactory<Command>> namedFactoryList = new ArrayList<>();
         namedFactoryList.add(new SftpSubsystemFactory());
         sshd.setSubsystemFactories(namedFactoryList);
-        sshd.setPasswordAuthenticator((username, password, serverSession) -> username.equals(ConnectBeanBuilder.USERNAME) && password.equals(ConnectBeanBuilder.PASSWORD));
+        sshd.setPasswordAuthenticator((username, password, serverSession) -> username.equals(ConnectionBeanBuilder.USERNAME) && password.equals(ConnectionBeanBuilder.PASSWORD));
         sshd.setPublickeyAuthenticator((s, publicKey, serverSession) -> false);
         sshd.setSessionFactory(new SessionFactory(sshd));
         sshd.setScheduledExecutorService(Executors.newSingleThreadScheduledExecutor());
@@ -118,6 +117,6 @@ public class SftpServer {
             LOG.error("Assign port : {}", i);
             return i;
         }
-        return ConnectBeanBuilder.PORT;
+        return ConnectionBeanBuilder.PORT;
     }
 }

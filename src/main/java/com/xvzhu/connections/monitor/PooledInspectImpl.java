@@ -3,7 +3,10 @@ package com.xvzhu.connections.monitor;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.IInspect;
+import com.xvzhu.connections.apis.ManagerBean;
 import lombok.NonNull;
+
+import java.util.Map;
 
 /**
  * @author : xvzhu
@@ -12,12 +15,12 @@ import lombok.NonNull;
  */
 public class PooledInspectImpl implements IInspect {
     @Override
-    public void inspect(@NonNull ConnectionBean connectionBean) {
+    public void inspect(@NonNull ConnectionBean connectionBean, @NonNull Map<ConnectionBean, Map<Thread, ManagerBean>> connections) {
 
     }
 
     @Override
-    public void inspect() {
+    public void inspect(@NonNull Map<ConnectionBean, Map<Thread, ManagerBean>> connections) {
 
     }
 }

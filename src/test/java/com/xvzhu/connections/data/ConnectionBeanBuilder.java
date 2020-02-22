@@ -10,7 +10,7 @@ import lombok.NonNull;
  * @since Date : 2020-02-22 9:13
  */
 @Builder
-public class ConnectBeanBuilder {
+public class ConnectionBeanBuilder {
     public static final int PORT = 2222;
     public static final String HOST = "127.0.0.1";
     public static final String USERNAME = "huawei";

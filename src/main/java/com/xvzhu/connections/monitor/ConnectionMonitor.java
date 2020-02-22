@@ -5,12 +5,14 @@ import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.IConnectionMonitor;
 import com.xvzhu.connections.apis.IObserver;
+import com.xvzhu.connections.apis.ManagerBean;
 import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -30,6 +32,7 @@ public class ConnectionMonitor implements IConnectionMonitor {
     private static Logger LOG = LoggerFactory.getLogger(ConnectionMonitor.class);
     private static final int DEFAULT_OBSERVERS = 2;
     private static final long DEFAULT_INTERVAL_TIME_SECOND = 60L;
+
     private static class ConnectionMonitorHolder {
         private static final ConnectionMonitor INSTANCE = new ConnectionMonitor();
     }
@@ -103,10 +106,12 @@ public class ConnectionMonitor implements IConnectionMonitor {
      * @param connectionManager the connection manager
      * @param connectionBean    the connection bean
      */
-    public void notifyObservers(@NonNull IConnectionManager connectionManager, @NonNull ConnectionBean connectionBean) {
+    public void notifyObservers(@NonNull IConnectionManager connectionManager,
+                                @NonNull ConnectionBean connectionBean,
+                                @NonNull Map<ConnectionBean, Map<Thread, ManagerBean>> connections) {
         LOG.info("Begin to inspect the connection by notify.");
         for (IObserver observer : observers) {
-            observer.visit(connectionManager, connectionBean);
+            observer.visit(connectionManager, connectionBean, connections);
         }
     }
 }

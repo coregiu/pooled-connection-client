@@ -1,5 +1,9 @@
 package com.xvzhu.connections.apis;
 
+import lombok.NonNull;
+
+import java.util.Map;
+
 /**
  * Connection Monitor API.
  *
@@ -13,15 +17,18 @@ public interface IConnectionMonitor {
      *
      * @param observer the observer
      */
-    void attach(IObserver observer);
+    void attach(@NonNull IObserver observer);
 
     /**
      * Notify observers.
      *
      * @param connectionManager the connection manager
      * @param connectionBean    the connection bean
+     * @param connections       the connections
      */
-    void notifyObservers(IConnectionManager connectionManager, ConnectionBean connectionBean);
+    void notifyObservers(@NonNull IConnectionManager connectionManager,
+                         @NonNull ConnectionBean connectionBean,
+                         @NonNull Map<ConnectionBean, Map<Thread, ManagerBean>> connections);
 
     /**
      * <p>Get schedule interval time (second).</p>

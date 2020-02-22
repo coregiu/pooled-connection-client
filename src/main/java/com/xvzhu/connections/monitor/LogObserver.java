@@ -4,6 +4,7 @@ import com.xvzhu.connections.BasicSftpClientConnectionManager;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.IObserver;
+import com.xvzhu.connections.apis.ManagerBean;
 import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,15 +28,16 @@ public class LogObserver implements IObserver {
      * @param connectionManager the connection manager
      */
     @Override
-    public void visit(@NonNull IConnectionManager connectionManager, @NonNull ConnectionBean connectionBean) {
+    public void visit(@NonNull IConnectionManager connectionManager,
+                      @NonNull ConnectionBean connectionBean,
+                      @NonNull Map<ConnectionBean, Map<Thread, ManagerBean>> connections) {
         LOG.warn("Begin to inspect the connection manager: {}, {}", connectionBean.getHost(), Thread.currentThread());
-        getStatisticInfo(connectionManager).forEach((key, value) -> LOG.warn("{} : {}", key, value));
+        getStatisticInfo(connectionManager, connections).forEach((key, value) -> LOG.warn("{} : {}", key, value));
     }
 
-    private Map<String, Object> getStatisticInfo(IConnectionManager connectionManager) {
+    private Map<String, Object> getStatisticInfo(IConnectionManager connectionManager,
+                                                 Map<ConnectionBean, Map<Thread, ManagerBean>> connections) {
         Map<String, Object> statisticMap = new HashMap<>();
-        Map<ConnectionBean, Map<Thread, BasicSftpClientConnectionManager.ManagerBean>> connections =
-                BasicSftpClientConnectionManager.getConnections();
         if (connectionManager instanceof BasicSftpClientConnectionManager) {
             statisticMap.put("Total of host connections", connections.size());
             connections.forEach((key, value) ->

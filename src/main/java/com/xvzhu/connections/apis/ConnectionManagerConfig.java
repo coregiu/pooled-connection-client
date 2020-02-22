@@ -55,5 +55,12 @@ public class ConnectionManagerConfig {
      * Default is 10 minutes.(600000 ms)
      */
     @Builder.Default
-    private long intervalTimeMS = DEFAULT_SCHEDULE_INTERVAL_TIME_MS;
+    private long schedulePeriodTimeMS = DEFAULT_SCHEDULE_INTERVAL_TIME_MS;
+
+    /**
+     * The switch of inspection.
+     * Default true.
+     */
+    @Builder.Default
+    private boolean isAutoInspect = true;
 }

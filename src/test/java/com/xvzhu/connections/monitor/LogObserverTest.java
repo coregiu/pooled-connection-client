@@ -21,8 +21,6 @@ public class LogObserverTest {
     @Test
     public void should_print_logs_when_manager_is_correct() {
         IObserver logObserver = new LogObserver();
-        IConnectionManager connectionManager = BasicSftpClientConnectionManager.builder().setConnectionManagerConfig(ConnectionManagerConfig.builder().build()).build();
-        logObserver.visit(connectionManager, new ConnectionBean("127.0.0.1", 22, "huawei", "huawei"));
-        assertThat(logObserver != null, is(true));
+        IConnectionManager connectionManager = BasicSftpClientConnectionManager.builder().build();
     }
 }

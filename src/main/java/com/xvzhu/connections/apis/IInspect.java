@@ -16,11 +16,14 @@ public interface IInspect {
      * <p>Inspect the connection, close the connection if it's timed out or closed.</p>
      *
      * @param connectionBean the connection bean
+     * @param connections    the connections
      */
-    void inspect(@NonNull ConnectionBean connectionBean);
+    void inspect(@NonNull ConnectionBean connectionBean, @NonNull Map<ConnectionBean, Map<Thread, ManagerBean>> connections);
 
     /**
      * <p>Inspect the manager, close the connection if it's timed out or closed.</p>
+     *
+     * @param connections the connections
      */
-    void inspect();
+    void inspect(@NonNull Map<ConnectionBean, Map<Thread, ManagerBean>> connections);
 }

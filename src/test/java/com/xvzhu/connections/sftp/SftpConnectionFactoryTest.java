@@ -4,7 +4,7 @@ import com.jcraft.jsch.JSchException;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.ISftpConnection;
-import com.xvzhu.connections.data.ConnectBeanBuilder;
+import com.xvzhu.connections.data.ConnectionBeanBuilder;
 import com.xvzhu.connections.mockserver.SftpServer;
 import org.apache.commons.pool2.PooledObject;
 import org.junit.After;
@@ -43,7 +43,7 @@ public class SftpConnectionFactoryTest {
         sftpServer.setupSftpServer(uuid, countDownLatch);
         countDownLatch.await();
         int port = sftpServer.getPort(uuid);
-        connectionBean = ConnectBeanBuilder.builder().port(port).build().getConnectionBean();
+        connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
     }
 
     @After
@@ -67,7 +67,7 @@ public class SftpConnectionFactoryTest {
     public void should_failed_when_create_connection_using_wrong_info() throws ConnectionException, JSchException {
         expectedException.expect(ConnectionException.class);
         expectedException.expectMessage("Failed to connect the ftp server");
-        ConnectionBean connectionBean1 = ConnectBeanBuilder.builder().password("").build().getConnectionBean();
+        ConnectionBean connectionBean1 = ConnectionBeanBuilder.builder().password("").build().getConnectionBean();
         ISftpConnection sftpConnection = SftpConnectionFactory.builder().connectionBean(connectionBean1).build().create();
         try {
             assertThat(sftpConnection.currentDirectory() != null, is(true));
