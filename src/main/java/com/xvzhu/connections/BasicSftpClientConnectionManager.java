@@ -50,7 +50,7 @@ public class BasicSftpClientConnectionManager<T extends IConnection> implements 
 
     private BasicSftpClientConnectionManager(ConnectionManagerConfig connectionManagerConfig) {
         BasicSftpClientConnectionManager.connectionManagerConfig = connectionManagerConfig;
-        connectionMonitor.setIntervalTimeSecond(connectionManagerConfig.getIntervalTimeSecond());
+        connectionMonitor.setIntervalTimeSecond(connectionManagerConfig.getIntervalTimeMS());
         operationFactory = new OperationFactory(connectionManagerConfig);
     }
 

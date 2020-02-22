@@ -25,7 +25,6 @@ import java.util.function.Consumer;
  */
 public class OperationFactory {
     private static final Logger LOG = LoggerFactory.getLogger(OperationFactory.class);
-    private static final int SECOND_CONVERT_UNIT = 1000;
 
     private ConnectionManagerConfig config;
 
@@ -107,7 +106,7 @@ public class OperationFactory {
         // 1. Release timed out and closed connections. Contains reuse and close time out.
         hostConnectionMap.entrySet().stream()
                 .filter(entry -> entry.getValue().isConnectionBorrowed() &&
-                        isTimedOut(timeNow, entry.getValue().getBorrowTime(), config.getReuseTimeoutSecond()))
+                        isTimedOut(timeNow, entry.getValue().getBorrowTime(), config.getBorrowTimeoutMS()))
                 .forEach(entry -> reuseSet.add(entry));
         reuseSet.stream().forEach(entry -> releaseAConnection(entry.getValue()));
 
@@ -115,7 +114,7 @@ public class OperationFactory {
                 = new HashSet<>(hostConnectionMap.size());
         hostConnectionMap.entrySet().stream()
                 .filter(entry -> (!entry.getValue().isConnectionBorrowed()) &&
-                        isTimedOut(timeNow, entry.getValue().getReleaseTime(), config.getCloseTimeoutSecond()))
+                        isTimedOut(timeNow, entry.getValue().getReleaseTime(), config.getIdleTimeoutSecond()))
                 .forEach(entry -> closeSet.add(entry));
         closeSet.stream().forEach(entry -> closeAConnection(entry.getKey(), hostConnectionMap));
 
@@ -133,7 +132,7 @@ public class OperationFactory {
     }
 
     private boolean isTimedOut(long timeNow, long checkTime, int timedout) {
-        return (timeNow - checkTime) / SECOND_CONVERT_UNIT > timedout;
+        return timeNow - checkTime > timedout;
     }
 
     private void releaseCurrentConnection(Map<Thread, BasicSftpClientConnectionManager.ManagerBean> hostConnectionMap) {
@@ -142,10 +141,10 @@ public class OperationFactory {
         long timeNow = Calendar.getInstance().getTimeInMillis();
 
         if (managerBean.isConnectionBorrowed() && isTimedOut(timeNow,
-                managerBean.getBorrowTime(), config.getReuseTimeoutSecond())) {
+                managerBean.getBorrowTime(), config.getBorrowTimeoutMS())) {
             releaseAConnection(managerBean);
         } else if ((!managerBean.isConnectionBorrowed()) && isTimedOut(timeNow,
-                managerBean.getReleaseTime(), config.getCloseTimeoutSecond())){
+                managerBean.getReleaseTime(), config.getIdleTimeoutSecond())){
             closeAConnection(releaseThread, hostConnectionMap);
         } else {
             LOG.info("Do nothing");

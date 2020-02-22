@@ -28,7 +28,6 @@ import static org.junit.Assert.assertThat;
 public class OperationFactoryTest {
     private OperationFactory operationFactory = new OperationFactory(ConnectionManagerConfig.builder().maxConnectionSize(3).build());
     private ConnectionManagerConfig connectionManagerConfig = ConnectionManagerConfig.builder().build();
-    private static final int SECOND_UNIT = 1000;
 
     @Capturing
     private SftpImpl sftpConnection;
@@ -52,7 +51,7 @@ public class OperationFactoryTest {
         BasicSftpClientConnectionManager.ManagerBean managerBean =
                 BasicSftpClientConnectionManager.ManagerBean.builder()
                         .isConnectionBorrowed(true)
-                        .borrowTime(timeNow - (connectionManagerConfig.getReuseTimeoutSecond() * SECOND_UNIT) - 100000)
+                        .borrowTime(timeNow - connectionManagerConfig.getBorrowTimeoutMS() - 100000)
                         .build();
         managerBeanMap.put(Thread.currentThread(), managerBean);
         BasicSftpClientConnectionManager.getConnections().put(connectionBean, managerBeanMap);
@@ -99,7 +98,7 @@ public class OperationFactoryTest {
         BasicSftpClientConnectionManager.ManagerBean managerBean =
                 BasicSftpClientConnectionManager.ManagerBean.builder()
                         .isConnectionBorrowed(false)
-                        .releaseTime(timeNow - connectionManagerConfig.getCloseTimeoutSecond() * SECOND_UNIT - 10000)
+                        .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutSecond() - 10000)
                         .sftpConnection(sftpConnection)
                         .build();
         managerBeanMap.put(Thread.currentThread(), managerBean);
@@ -135,7 +134,7 @@ public class OperationFactoryTest {
         BasicSftpClientConnectionManager.ManagerBean managerBean =
                 BasicSftpClientConnectionManager.ManagerBean.builder()
                         .isConnectionBorrowed(true)
-                        .borrowTime(timeNow - (connectionManagerConfig.getReuseTimeoutSecond() * SECOND_UNIT) - 100000)
+                        .borrowTime(timeNow - connectionManagerConfig.getBorrowTimeoutMS() - 100000)
                         .build();
         managerBeanMap.put(Thread.currentThread(), managerBean);
         BasicSftpClientConnectionManager.getConnections().put(connectionBean, managerBeanMap);
@@ -145,7 +144,7 @@ public class OperationFactoryTest {
         BasicSftpClientConnectionManager.ManagerBean managerBean1 =
                 BasicSftpClientConnectionManager.ManagerBean.builder()
                         .isConnectionBorrowed(true)
-                        .borrowTime(timeNow - (connectionManagerConfig.getReuseTimeoutSecond() * SECOND_UNIT) - 100000)
+                        .borrowTime(timeNow - connectionManagerConfig.getBorrowTimeoutMS() - 100000)
                         .build();
         managerBeanMap1.put(Thread.currentThread(), managerBean1);
         BasicSftpClientConnectionManager.getConnections().put(connectionBean1, managerBeanMap1);
@@ -189,7 +188,7 @@ public class OperationFactoryTest {
                 BasicSftpClientConnectionManager.ManagerBean.builder()
                         .isConnectionBorrowed(false)
                         .sftpConnection(sftpConnection)
-                        .releaseTime(timeNow - (connectionManagerConfig.getCloseTimeoutSecond() * SECOND_UNIT) - 100000)
+                        .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutSecond() - 100000)
                         .build();
         managerBeanMap.put(Thread.currentThread(), managerBean);
         BasicSftpClientConnectionManager.getConnections().put(connectionBean, managerBeanMap);
@@ -200,7 +199,7 @@ public class OperationFactoryTest {
                 BasicSftpClientConnectionManager.ManagerBean.builder()
                         .isConnectionBorrowed(false)
                         .sftpConnection(sftpConnection)
-                        .releaseTime(timeNow - (connectionManagerConfig.getCloseTimeoutSecond() * SECOND_UNIT) - 100000)
+                        .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutSecond() - 100000)
                         .build();
         managerBeanMap1.put(Thread.currentThread(), managerBean1);
         BasicSftpClientConnectionManager.getConnections().put(connectionBean1, managerBeanMap1);
