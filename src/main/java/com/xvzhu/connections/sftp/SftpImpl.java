@@ -11,9 +11,6 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +62,7 @@ public class SftpImpl implements ISftpConnection {
     }
 
     @Override
-    public byte[] download(@NonNull String dir, @NonNull String name) throws ConnectionException {
+    public InputStream download(@NonNull String dir, @NonNull String name) throws ConnectionException {
         if (!isExist(dir)) {
             LOG.error("The directory: {} is not existed!", dir);
             throw new ConnectionException(String.format("The directory: %s is not existed!", dir));
@@ -77,10 +74,7 @@ public class SftpImpl implements ISftpConnection {
         }
         try {
             channelSftp.cd(dir);
-            InputStream in = channelSftp.get(name);
-            return inputStreamToByteArray(in);
-        } catch (IOException e) {
-            throw new ConnectionException("Failed to convert the file stream!");
+            return channelSftp.get(name);
         } catch (SftpException e) {
             throw new ConnectionException("Failed to get the file from ftp server!");
         }
@@ -188,22 +182,5 @@ public class SftpImpl implements ISftpConnection {
             LOG.error("file not exists!");
             return false;
         }
-    }
-
-    /**
-     * convert input stream to byte array.
-     *
-     * @param in input
-     * @return byte[]
-     * @throws IOException the io exception.
-     */
-    private byte[] inputStreamToByteArray(InputStream in) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        byte[] buffer = new byte[BYTE_DEFAULT_SIZE];
-        int n;
-        while ((n = in.read(buffer)) > 0) {
-            out.write(buffer, 0, n);
-        }
-        return out.toByteArray();
     }
 }

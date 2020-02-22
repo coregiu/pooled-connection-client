@@ -50,10 +50,10 @@ public interface ISftpConnection extends IConnection{
      *
      * @param dir  the dir
      * @param name the name
-     * @return the byte [ ]
+     * @return the input stream
      * @throws ConnectionException the connection exception
      */
-    byte[] download(String dir, String name) throws ConnectionException;
+    InputStream download(String dir, String name) throws ConnectionException;
 
     /**
      * Upload.
