@@ -36,7 +36,9 @@ ConnectionManagerConfig.borrowMaxWaitTimeMS -- The max wait time for borrow conn
 ```
 
 <H2>Class Design:</H2>
-<img src="design.png"/>
+
+![]("design.png")
+
 
 <H2>Getting start:</H2>
 Basic manager:
