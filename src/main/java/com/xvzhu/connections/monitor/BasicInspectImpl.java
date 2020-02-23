@@ -1,3 +1,7 @@
+/*
+ * Copyright (c)  Xvzhu 2020.  All rights reserved.
+ */
+
 package com.xvzhu.connections.monitor;
 
 import com.xvzhu.connections.BasicClientConnectionManager;
@@ -20,8 +24,8 @@ import java.util.function.Consumer;
  */
 public class BasicInspectImpl implements IInspect {
 
-    private Consumer<Map.Entry<ConnectionBean, Map<Thread, ConnectionManagerBean>>> releaseConsumer = BasicClientConnectionManager.getReleaseConsumer();
-    private BiConsumer<ConnectionBean, Map<Thread, ConnectionManagerBean>> releaseBiConsumer = BasicClientConnectionManager.getReleaseBiConsumer();
+    private Consumer<Map.Entry<ConnectionBean, Map<Thread, ConnectionManagerBean>>> releaseConsumer;
+    private BiConsumer<ConnectionBean, Map<Thread, ConnectionManagerBean>> releaseBiConsumer;
 
     /**
      * <p>Close timed out and closed connection, clear the manager bean in thread local.<br>
@@ -31,6 +35,10 @@ public class BasicInspectImpl implements IInspect {
      */
     @Override
     public void inspect(@NonNull ConnectionBean connectionBean, @NonNull Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections) {
+
+        if (releaseBiConsumer == null) {
+            releaseBiConsumer =  BasicClientConnectionManager.getReleaseBiConsumer();
+        }
         releaseBiConsumer.accept(connectionBean, connections.get(connectionBean));
     }
 
@@ -39,7 +47,9 @@ public class BasicInspectImpl implements IInspect {
      */
     @Override
     public void inspect(@NonNull Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections) {
-        releaseConsumer = BasicClientConnectionManager.getReleaseConsumer();
+        if (releaseConsumer == null) {
+            releaseConsumer = BasicClientConnectionManager.getReleaseConsumer();
+        }
         connections.entrySet().stream().forEach(releaseConsumer);
     }
 }

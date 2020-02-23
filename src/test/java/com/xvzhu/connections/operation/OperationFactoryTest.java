@@ -1,3 +1,7 @@
+/*
+ * Copyright (c)  Xvzhu 2020.  All rights reserved.
+ */
+
 package com.xvzhu.connections.operation;
 
 import com.jcraft.jsch.ChannelSftp;

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c)  Xvzhu 2020.  All rights reserved.
+ */
+
 package com.xvzhu.connections.data;
 
 import com.xvzhu.connections.apis.ConnectionBean;
