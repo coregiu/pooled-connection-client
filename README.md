@@ -3,7 +3,7 @@ Supply basic and pooled management of connections, such as sftp, snmp and so on.
 
 Using common-pool2 as pool manager. Thread safety.
 
-## Functions:
+## Features:
 
 ```
 1. Support basic management of connections. Each server host and thread has a connection.
@@ -16,7 +16,7 @@ Using common-pool2 as pool manager. Thread safety.
 ```
 
 
-## Key parameter:
+## Key configurations:
 
 ```
 ConnectionManagerConfig.maxConnectionSize -- The max size of connections all of current process(ClassLoader). Default is 8.
