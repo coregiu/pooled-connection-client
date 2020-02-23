@@ -3,7 +3,7 @@ Supply basic and pooled management of connections, such as sftp, snmp and so on.
 
 Using common-pool2 as pool manager. Thread safety.
 
-<H2>Functions:</H2>
+## Functions:
 
 ```
 1. Support basic management of connections. Each server host and thread has a connection.
@@ -16,7 +16,7 @@ Using common-pool2 as pool manager. Thread safety.
 ```
 
 
-<H2>Key parameter:</H2>
+## Key parameter:
 
 ```
 ConnectionManagerConfig.maxConnectionSize -- The max size of connections all of current process(ClassLoader). Default is 8.
@@ -35,15 +35,15 @@ ConnectionManagerConfig.borrowMaxWaitTimeMS -- The max wait time for borrow conn
 
 ```
 
-<H2>Class Design:</H2>
+## Class Design:
 
 ![design](design.png "design")
 
 
-<H2>Getting start:</H2>
-Basic manager:
+## Getting start:
+### Basic manager:
 
-```
+```java
 IConnectionManager manager = BasicClientConnectionManager.builder()
                 .setMaxConnectionSize(8)
                 .setAutoInspect(false)
@@ -62,9 +62,9 @@ try {
 }
 ```
 
-Pooled manager:
+### Pooled manager:
 
-```
+```java
 ConnectionBean connectionBean = new ConnectionBean("127.0.0.1", 22, "test", "test");
 ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
         IConnectionManager manager = PooledClientConnectionManager.builder()
