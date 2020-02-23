@@ -70,7 +70,7 @@ public class BasicInspectImplTest {
         ConnectionManagerBean managerBean = ConnectionManagerBean.builder()
                 .isConnectionBorrowed(false)
                 .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() - 10000)
-                .sftpConnection(sftpConnection)
+                .connectionClient(sftpConnection)
                 .build();
         managerMap.put(Thread.currentThread(), managerBean);
 
@@ -136,7 +136,7 @@ public class BasicInspectImplTest {
         ConnectionManagerBean managerBean = ConnectionManagerBean.builder()
                 .isConnectionBorrowed(false)
                 .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() - 10000)
-                .sftpConnection(sftpConnection)
+                .connectionClient(sftpConnection)
                 .build();
         managerMap.put(Thread.currentThread(), managerBean);
 
@@ -145,7 +145,7 @@ public class BasicInspectImplTest {
         ConnectionManagerBean managerBean2 = ConnectionManagerBean.builder()
                 .isConnectionBorrowed(false)
                 .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() - 10000)
-                .sftpConnection(sftpConnection)
+                .connectionClient(sftpConnection)
                 .build();
         managerMap2.put(Thread.currentThread(), managerBean2);
 
@@ -154,7 +154,7 @@ public class BasicInspectImplTest {
         ConnectionManagerBean managerBean3 = ConnectionManagerBean.builder()
                 .isConnectionBorrowed(false)
                 .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() + 1000)
-                .sftpConnection(sftpConnection)
+                .connectionClient(sftpConnection)
                 .build();
         managerMap3.put(Thread.currentThread(), managerBean3);
 
@@ -178,7 +178,7 @@ public class BasicInspectImplTest {
         ConnectionManagerBean managerBean = ConnectionManagerBean.builder()
                 .isConnectionBorrowed(false)
                 .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() - 10000)
-                .sftpConnection(sftpConnection)
+                .connectionClient(sftpConnection)
                 .build();
         managerMap.put(Thread.currentThread(), managerBean);
 
@@ -187,7 +187,7 @@ public class BasicInspectImplTest {
         ConnectionManagerBean managerBean2 = ConnectionManagerBean.builder()
                 .isConnectionBorrowed(false)
                 .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() - 10000)
-                .sftpConnection(sftpConnection)
+                .connectionClient(sftpConnection)
                 .build();
         managerMap2.put(Thread.currentThread(), managerBean2);
 
@@ -196,7 +196,7 @@ public class BasicInspectImplTest {
         ConnectionManagerBean managerBean3 = ConnectionManagerBean.builder()
                 .isConnectionBorrowed(false)
                 .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() + 1000)
-                .sftpConnection(sftpConnection)
+                .connectionClient(sftpConnection)
                 .build();
         managerMap3.put(Thread.currentThread(), managerBean3);
 
@@ -205,7 +205,7 @@ public class BasicInspectImplTest {
         ConnectionManagerBean managerBean4 = ConnectionManagerBean.builder()
                 .isConnectionBorrowed(false)
                 .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() + 1000)
-                .sftpConnection(sftpConnection)
+                .connectionClient(sftpConnection)
                 .build();
         managerMap4.put(Thread.currentThread(), managerBean4);
 

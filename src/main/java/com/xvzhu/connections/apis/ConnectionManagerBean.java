@@ -1,6 +1,6 @@
 package com.xvzhu.connections.apis;
 
-import com.xvzhu.connections.apis.protocol.ISftpConnection;
+import com.xvzhu.connections.apis.protocol.IConnection;
 import lombok.Builder;
 import lombok.Data;
 import java.util.Calendar;
@@ -15,7 +15,7 @@ import java.util.Calendar;
 public class ConnectionManagerBean {
     @Builder.Default
     private Object lock = new Object();
-    private ISftpConnection sftpConnection;
+    private IConnection connectionClient;
     @Builder.Default
     private long borrowTime = Calendar.getInstance().getTimeInMillis();
     private long releaseTime;

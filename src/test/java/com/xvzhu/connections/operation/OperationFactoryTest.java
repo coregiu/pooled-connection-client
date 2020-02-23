@@ -9,7 +9,6 @@ import com.xvzhu.connections.apis.ConnectionManagerConfig;
 import com.xvzhu.connections.apis.ConnectionManagerBean;
 import com.xvzhu.connections.sftp.SftpImpl;
 import mockit.Capturing;
-import mockit.Expectations;
 import mockit.Mocked;
 import org.junit.Test;
 import java.util.Calendar;
@@ -84,16 +83,6 @@ public class OperationFactoryTest {
     @Test
     public void should_close_current_basic_connections_when_basic_connection_close_time_out() throws JSchException {
         Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
-        new Expectations() {
-            {
-                sftpConnection.getChannelSftp();
-                result = channelSftp;
-                channelSftp.disconnect();
-                channelSftp.getSession();
-                result = session;
-                session.disconnect();
-            }
-        };
 
         long timeNow = Calendar.getInstance().getTimeInMillis();
         ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "huawei", "huawei");
@@ -102,7 +91,7 @@ public class OperationFactoryTest {
                 ConnectionManagerBean.builder()
                         .isConnectionBorrowed(false)
                         .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() - 10000)
-                        .sftpConnection(sftpConnection)
+                        .connectionClient(sftpConnection)
                         .build();
         managerBeanMap.put(Thread.currentThread(), managerBean);
         connections.put(connectionBean, managerBeanMap);
@@ -121,7 +110,7 @@ public class OperationFactoryTest {
                 ConnectionManagerBean.builder()
                         .isConnectionBorrowed(false)
                         .releaseTime(timeNow)
-                        .sftpConnection(sftpConnection)
+                        .connectionClient(sftpConnection)
                         .build();
         managerBeanMap.put(Thread.currentThread(), managerBean);
         connections.put(connectionBean, managerBeanMap);
@@ -177,23 +166,13 @@ public class OperationFactoryTest {
     @Test
     public void should_close_all_basic_connections_when_basic_connection_close_time_out() throws JSchException{
         Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
-        new Expectations() {
-            {
-                sftpConnection.getChannelSftp();
-                result = channelSftp;
-                channelSftp.disconnect();
-                channelSftp.getSession();
-                result = session;
-                session.disconnect();
-            }
-        };
         long timeNow = Calendar.getInstance().getTimeInMillis();
         ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "huawei", "huawei");
         Map<Thread, ConnectionManagerBean> managerBeanMap = new HashMap<>();
         ConnectionManagerBean managerBean =
                 ConnectionManagerBean.builder()
                         .isConnectionBorrowed(false)
-                        .sftpConnection(sftpConnection)
+                        .connectionClient(sftpConnection)
                         .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() - 100000)
                         .build();
         managerBeanMap.put(Thread.currentThread(), managerBean);
@@ -204,7 +183,7 @@ public class OperationFactoryTest {
         ConnectionManagerBean managerBean1 =
                 ConnectionManagerBean.builder()
                         .isConnectionBorrowed(false)
-                        .sftpConnection(sftpConnection)
+                        .connectionClient(sftpConnection)
                         .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() - 100000)
                         .build();
         managerBeanMap1.put(Thread.currentThread(), managerBean1);
@@ -231,28 +210,18 @@ public class OperationFactoryTest {
     @Test
     public void should_close_all_basic_connections_when_basic_connections_exceed_max_limit() throws JSchException{
         Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
-        new Expectations() {
-            {
-                sftpConnection.getChannelSftp();
-                result = channelSftp;
-                channelSftp.disconnect();
-                channelSftp.getSession();
-                result = session;
-                session.disconnect();
-            }
-        };
         long timeNow = Calendar.getInstance().getTimeInMillis();
         ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "huawei", "huawei");
         Map<Thread, ConnectionManagerBean> managerBeanMap = new HashMap<>();
 
         managerBeanMap.put(Thread.currentThread(), ConnectionManagerBean.builder()
                 .isConnectionBorrowed(false)
-                .sftpConnection(sftpConnection)
+                .connectionClient(sftpConnection)
                 .releaseTime(timeNow)
                 .build());
         managerBeanMap.put(new Thread("1"), ConnectionManagerBean.builder()
                 .isConnectionBorrowed(false)
-                .sftpConnection(sftpConnection)
+                .connectionClient(sftpConnection)
                 .releaseTime(timeNow)
                 .build());
         managerBeanMap.put(new Thread("2"), ConnectionManagerBean.builder()

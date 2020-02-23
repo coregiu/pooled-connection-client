@@ -32,7 +32,7 @@ import static org.junit.Assert.assertThat;
  */
 public class SftpImplTest {
     private static final Logger LOG = LoggerFactory.getLogger(SftpImplTest.class);
-    public static final int BYTE_DEFAULT_SIZE = 4096;
+    private static final int BYTE_DEFAULT_SIZE = 4096;
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
     private SftpServer sftpServer;
@@ -48,7 +48,8 @@ public class SftpImplTest {
         countDownLatch.await();
         int port = sftpServer.getPort(uuid);
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
-        sftpConnection = SftpConnectionFactory.builder().connectionBean(connectionBean).build().create();
+        sftpConnection = new SftpImpl();
+        sftpConnection.connect(connectionBean, 10000);
     }
 
     @After

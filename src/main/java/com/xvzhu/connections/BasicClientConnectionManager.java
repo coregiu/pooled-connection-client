@@ -180,7 +180,7 @@ public class BasicClientConnectionManager<T extends IConnection> implements ICon
             managerBean.setBorrowTime(Calendar.getInstance().getTimeInMillis());
             LOG.debug("Reuse the connection for host {}, thread {}",
                     connectionBean.getHost(), Thread.currentThread().getName());
-            return (T) managerBean.getSftpConnection();
+            return (T) managerBean.getConnectionClient();
         }
     }
 
@@ -194,7 +194,7 @@ public class BasicClientConnectionManager<T extends IConnection> implements ICon
 
             managerBean = ConnectionManagerBean.builder()
                     .isConnectionBorrowed(true)
-                    .sftpConnection(connection)
+                    .connectionClient(connection)
                     .build();
             Map<Thread, ConnectionManagerBean> managerBeanThreadLocal = new ConcurrentHashMap<>(DEFAULT_MAX_CONNECTION_SIZE);
             managerBeanThreadLocal.put(Thread.currentThread(), managerBean);

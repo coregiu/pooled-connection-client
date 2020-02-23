@@ -1,10 +1,10 @@
 package com.xvzhu.connections.operation;
 
-import com.jcraft.jsch.JSchException;
 import com.xvzhu.connections.apis.ConnectionConst;
 import com.xvzhu.connections.apis.ConnectionBean;
+import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.ConnectionManagerConfig;
-import com.xvzhu.connections.apis.protocol.ISftpConnection;
+import com.xvzhu.connections.apis.protocol.IConnection;
 import com.xvzhu.connections.apis.ConnectionManagerBean;
 import lombok.NonNull;
 import org.slf4j.Logger;
@@ -76,22 +76,21 @@ public class OperationFactory {
      */
     public void closeAConnection(@NonNull Thread thread,
                                  @NonNull Map<Thread, ConnectionManagerBean> hostConnectionMap) {
-        try {
-            ConnectionManagerBean managerBean = hostConnectionMap.get(thread);
-            // double check.
-            if (managerBean == null) {
-                LOG.info("Then thread {} 's connection has been closed!", thread);
-                return;
-            }
-            ISftpConnection connection = managerBean.getSftpConnection();
-            if (null != connection && null != connection.getChannelSftp()) {
-                connection.getChannelSftp().disconnect();
-                connection.getChannelSftp().getSession().disconnect();
-            }
-            hostConnectionMap.remove(thread);
-        } catch (JSchException e) {
-            LOG.error("Failed to close the connection", e);
+        ConnectionManagerBean managerBean = hostConnectionMap.get(thread);
+        // double check.
+        if (managerBean == null) {
+            LOG.info("Then thread {} 's connection has been closed!", thread);
+            return;
         }
+        IConnection connection = managerBean.getConnectionClient();
+        if (null != connection) {
+            try {
+                connection.disconnect();
+            } catch (ConnectionException e) {
+                LOG.error("Failed to disconnect", e);
+            }
+        }
+        hostConnectionMap.remove(thread);
     }
 
     private void releaseSftpConnection(ConnectionBean connectionBean,

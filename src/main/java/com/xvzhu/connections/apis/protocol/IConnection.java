@@ -1,5 +1,8 @@
 package com.xvzhu.connections.apis.protocol;
 
+import com.xvzhu.connections.apis.ConnectionBean;
+import com.xvzhu.connections.apis.ConnectionException;
+
 /**
  * Connection API.
  *
@@ -8,4 +11,26 @@ package com.xvzhu.connections.apis.protocol;
  * @since Date : 2020-02-15 15:33
  */
 public interface IConnection {
+    /**
+     * Connect.
+     *
+     * @param connectionBean     the connection bean
+     * @param timeoutMilliSecond the timeout milli second
+     * @throws ConnectionException the connection exception
+     */
+    void connect(ConnectionBean connectionBean, int timeoutMilliSecond) throws ConnectionException;
+
+    /**
+     * Disconnect.
+     *
+     * @throws ConnectionException the connection exception
+     */
+    void disconnect() throws ConnectionException;
+
+    /**
+     * Is valid boolean.
+     *
+     * @return the boolean
+     */
+    boolean isValid();
 }

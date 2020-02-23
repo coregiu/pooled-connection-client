@@ -1,9 +1,5 @@
 package com.xvzhu.connections.sftp;
 
-import com.jcraft.jsch.ChannelSftp;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.protocol.ISftpConnection;
@@ -13,7 +9,6 @@ import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
-import java.util.Properties;
 
 /**
  * The type Sftp connection factory.
@@ -26,17 +21,11 @@ import java.util.Properties;
 public class SftpConnectionFactory extends BasePooledObjectFactory<ISftpConnection> {
     private static final Logger LOG = LoggerFactory.getLogger(SftpConnectionFactory.class);
     private static final int DEFAULT_TIME_OUT_MILLI = 15000;
-    private static final String CHANNEL_TYPE = "sftp";
-    private static Properties sshConfig = new Properties();
-    @Builder.Default
-    private JSch jsch = new JSch();
+
     @Builder.Default
     private int timeoutMilliSecond = DEFAULT_TIME_OUT_MILLI;
     private ConnectionBean connectionBean;
 
-    static {
-        sshConfig.put("StrictHostKeyChecking", "no");
-    }
 
     /**
      * <p>Create sftp connection.</p>
@@ -46,21 +35,9 @@ public class SftpConnectionFactory extends BasePooledObjectFactory<ISftpConnecti
      */
     @Override
     public ISftpConnection create() throws ConnectionException {
-        try {
-            Session sshSession = jsch.getSession(connectionBean.getUsername(),
-                    connectionBean.getHost(),
-                    connectionBean.getPort());
-            sshSession.setPassword(connectionBean.getPassword());
-            sshSession.setConfig(sshConfig);
-            sshSession.setTimeout(timeoutMilliSecond);
-            sshSession.connect();
-            ChannelSftp channel = (ChannelSftp) sshSession.openChannel(CHANNEL_TYPE);
-            channel.connect();
-            return new SftpImpl(channel);
-        } catch (JSchException e) {
-            LOG.error("Failed to create connection");
-            throw new ConnectionException("Failed to connect the ftp server", e);
-        }
+        ISftpConnection sftpConnection = new SftpImpl();
+        sftpConnection.connect(connectionBean, timeoutMilliSecond);
+        return sftpConnection;
     }
 
     /**
@@ -90,14 +67,10 @@ public class SftpConnectionFactory extends BasePooledObjectFactory<ISftpConnecti
             LOG.warn("The sftp is null");
             return;
         }
-        ChannelSftp channelSftp = sftp.getChannelSftp();
-        if (channelSftp != null) {
-            channelSftp.disconnect();
-            try {
-                channelSftp.getSession().disconnect();
-            } catch (JSchException e) {
-                LOG.error("Failed to close the session", e);
-            }
+        try {
+            sftp.disconnect();
+        } catch (ConnectionException e) {
+            LOG.error("Failed to disconnect the connection.", e);
         }
     }
 
@@ -114,6 +87,6 @@ public class SftpConnectionFactory extends BasePooledObjectFactory<ISftpConnecti
             return false;
         }
         ISftpConnection sftp = connectionPool.getObject();
-        return (sftp != null) && (!sftp.getChannelSftp().isClosed());
+        return sftp != null && sftp.isValid();
     }
 }
