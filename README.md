@@ -37,7 +37,7 @@ ConnectionManagerConfig.borrowMaxWaitTimeMS -- The max wait time for borrow conn
 
 <H2>Class Design:</H2>
 
-![]("design.png")
+![design](design.png "design")
 
 
 <H2>Getting start:</H2>
@@ -52,7 +52,7 @@ IConnectionManager manager = BasicClientConnectionManager.builder()
                 .setSchedulePeriodTimeMS(6000L)
                 .setConnectionTimeoutMs(60000)
                 .build();
-ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
+ConnectionBean connectionBean = new ConnectionBean("127.0.0.1", 22, "test", "test");getConnectionBean();
 try {
     ISftpConnection sftpConnection = manager.borrowConnection(connectionBean, ISftpConnection.class);
     System.out.println(sftpConnection.currentDirectory());
@@ -65,10 +65,15 @@ try {
 Pooled manager:
 
 ```
+ConnectionBean connectionBean = new ConnectionBean("127.0.0.1", 22, "test", "test");
 ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
-IConnectionManager manager = PooledClientConnectionManager.builder()
-        .setBorrowMaxWaitTimeMS(8000)
-        .build(connectionBean, ISftpConnection.class);
+        IConnectionManager manager = PooledClientConnectionManager.builder()
+                .setBorrowMaxWaitTimeMS(8000)
+                .setAbandonedConfig(new AbandonedConfig())
+                .setConnectionConfig(new GenericObjectPoolConfig<>())
+                .setSchedulePeriodTimeMS(10000)
+                .setAutoInspect(false)
+                .build(connectionBean, ISftpConnection.class);
 try {
     ISftpConnection sftpConnection = manager.borrowConnection(connectionBean, ISftpConnection.class);
     System.out.println(sftpConnection.currentDirectory());

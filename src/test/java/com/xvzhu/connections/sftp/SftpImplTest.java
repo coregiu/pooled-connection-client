@@ -81,7 +81,7 @@ public class SftpImplTest {
 
     @Test
     public void should_return_false_when_check_not_exists_directory() throws ConnectionException{
-        String path = sftpConnection.currentDirectory() + "/huawei";
+        String path = sftpConnection.currentDirectory() + "/test";
         sftpConnection.mkdirs(path);
         assertThat(sftpConnection.isDirectory(path), is(true));
         sftpConnection.deleteDirectory(path);
@@ -90,7 +90,7 @@ public class SftpImplTest {
 
     @Test
     public void should_mkdir_when_dir_not_exists() throws ConnectionException{
-        String path = sftpConnection.currentDirectory() + "/huawei";
+        String path = sftpConnection.currentDirectory() + "/test";
         sftpConnection.mkdirs(path);
         assertThat(sftpConnection.isDirectory(path), is(true));
         sftpConnection.deleteDirectory(path);
@@ -100,7 +100,7 @@ public class SftpImplTest {
     @Test
     public void should_make_nested_dir_when_dir_not_exists() throws ConnectionException{
         String parentPath = sftpConnection.currentDirectory() + "/com";
-        String deepPath = parentPath + "/huawei";
+        String deepPath = parentPath + "/test";
 
         sftpConnection.mkdirs(deepPath);
         assertThat(sftpConnection.isDirectory(deepPath), is(true));
@@ -114,61 +114,61 @@ public class SftpImplTest {
     public void should_successfully_when_upload_file() throws ConnectionException, IOException {
         byte[] input = "Go go go, fire in the hole".getBytes();
         InputStream inputStream = new BufferedInputStream(new ByteArrayInputStream(input));
-        sftpConnection.upload(sftpConnection.currentDirectory(), "huawei.txt", inputStream);
-        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/huawei.txt"), is(true));
+        sftpConnection.upload(sftpConnection.currentDirectory(), "test.txt", inputStream);
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/test.txt"), is(true));
 
-        byte[] download = inputStreamToByteArray(sftpConnection.download(sftpConnection.currentDirectory(), "huawei.txt"));
+        byte[] download = inputStreamToByteArray(sftpConnection.download(sftpConnection.currentDirectory(), "test.txt"));
         assertThat(new String(input).equals(new String(download)), is(true));
 
-        sftpConnection.deleteFile(sftpConnection.currentDirectory(), "huawei.txt");
-        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/huawei.txt"), is(false));
+        sftpConnection.deleteFile(sftpConnection.currentDirectory(), "test.txt");
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/test.txt"), is(false));
     }
 
     @Test
     public void should_successfully_when_download_file() throws ConnectionException, IOException {
         byte[] input = "Go go go, fire in the hole".getBytes();
         InputStream inputStream = new BufferedInputStream(new ByteArrayInputStream(input));
-        sftpConnection.upload(sftpConnection.currentDirectory(), "huawei.txt", inputStream);
-        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/huawei.txt"), is(true));
+        sftpConnection.upload(sftpConnection.currentDirectory(), "test.txt", inputStream);
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/test.txt"), is(true));
 
-        byte[] download = inputStreamToByteArray(sftpConnection.download(sftpConnection.currentDirectory(), "huawei.txt"));
+        byte[] download = inputStreamToByteArray(sftpConnection.download(sftpConnection.currentDirectory(), "test.txt"));
         assertThat(new String(input).equals(new String(download)), is(true));
 
-        sftpConnection.deleteFile(sftpConnection.currentDirectory(), "huawei.txt");
-        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/huawei.txt"), is(false));
+        sftpConnection.deleteFile(sftpConnection.currentDirectory(), "test.txt");
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/test.txt"), is(false));
     }
 
     @Test
     public void should_return_true_when_file_exists() throws ConnectionException, IOException {
         byte[] input = "Go go go, fire in the hole".getBytes();
         InputStream inputStream = new BufferedInputStream(new ByteArrayInputStream(input));
-        sftpConnection.upload(sftpConnection.currentDirectory(), "huawei.txt", inputStream);
-        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/huawei.txt"), is(true));
+        sftpConnection.upload(sftpConnection.currentDirectory(), "test.txt", inputStream);
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/test.txt"), is(true));
 
-        byte[] download = inputStreamToByteArray(sftpConnection.download(sftpConnection.currentDirectory(), "huawei.txt"));
+        byte[] download = inputStreamToByteArray(sftpConnection.download(sftpConnection.currentDirectory(), "test.txt"));
         assertThat(new String(input).equals(new String(download)), is(true));
 
-        sftpConnection.deleteFile(sftpConnection.currentDirectory(), "huawei.txt");
-        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/huawei.txt"), is(false));
+        sftpConnection.deleteFile(sftpConnection.currentDirectory(), "test.txt");
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/test.txt"), is(false));
     }
 
     @Test
     public void should_successfully_when_delete_exists_file() throws ConnectionException, IOException {
         byte[] input = "Go go go, fire in the hole".getBytes();
         InputStream inputStream = new BufferedInputStream(new ByteArrayInputStream(input));
-        sftpConnection.upload(sftpConnection.currentDirectory(), "huawei.txt", inputStream);
-        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/huawei.txt"), is(true));
+        sftpConnection.upload(sftpConnection.currentDirectory(), "test.txt", inputStream);
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/test.txt"), is(true));
 
-        byte[] download = inputStreamToByteArray(sftpConnection.download(sftpConnection.currentDirectory(), "huawei.txt"));
+        byte[] download = inputStreamToByteArray(sftpConnection.download(sftpConnection.currentDirectory(), "test.txt"));
         assertThat(new String(input).equals(new String(download)), is(true));
 
-        sftpConnection.deleteFile(sftpConnection.currentDirectory(), "huawei.txt");
-        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/huawei.txt"), is(false));
+        sftpConnection.deleteFile(sftpConnection.currentDirectory(), "test.txt");
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/test.txt"), is(false));
     }
 
     @Test
     public void should_successfully_when_delete_exists_directory() throws ConnectionException, IOException {
-        String path = sftpConnection.currentDirectory() + "/huawei";
+        String path = sftpConnection.currentDirectory() + "/test";
         sftpConnection.mkdirs(path);
         assertThat(sftpConnection.isDirectory(path), is(true));
 
@@ -179,7 +179,7 @@ public class SftpImplTest {
     @Test
     public void should_successfully_when_input_correct_name_to_change() throws ConnectionException{
         String currentPath = sftpConnection.currentDirectory();
-        String path = currentPath + "/huawei";
+        String path = currentPath + "/test";
         sftpConnection.mkdirs(path);
         assertThat(sftpConnection.isDirectory(path), is(true));
         String pathNew = currentPath + "/com";
@@ -195,7 +195,7 @@ public class SftpImplTest {
         expectedException.expect(ConnectionException.class);
         expectedException.expectMessage("Failed to rename the file!");
         String currentPath = sftpConnection.currentDirectory();
-        String path = currentPath + "/huawei";
+        String path = currentPath + "/test";
         String pathNew = currentPath + "/com";
         sftpConnection.rename(path, pathNew);
     }
@@ -204,19 +204,19 @@ public class SftpImplTest {
     public void should_return_files_when_list_file() throws ConnectionException{
         byte[] input = "Go go go, fire in the hole".getBytes();
         InputStream inputStream = new BufferedInputStream(new ByteArrayInputStream(input));
-        String path = sftpConnection.currentDirectory() + "/huawei";
+        String path = sftpConnection.currentDirectory() + "/test";
         sftpConnection.mkdirs(path);
         assertThat(sftpConnection.isExist(path), is(true));
 
-        sftpConnection.upload(path, "huawei.txt", inputStream);
-        assertThat(sftpConnection.isFile(sftpConnection.currentDirectory() + "/huawei.txt"), is(true));
+        sftpConnection.upload(path, "test.txt", inputStream);
+        assertThat(sftpConnection.isFile(sftpConnection.currentDirectory() + "/test.txt"), is(true));
 
         List<String> files = sftpConnection.list(sftpConnection.currentDirectory());
         // conaint . and .. path.
         assertThat(files.size(), is(3));
 
-        sftpConnection.deleteFile(path, "huawei.txt");
-        assertThat(sftpConnection.isExist(path + "/huawei.txt"), is(false));
+        sftpConnection.deleteFile(path, "test.txt");
+        assertThat(sftpConnection.isExist(path + "/test.txt"), is(false));
 
         sftpConnection.deleteDirectory(path);
         assertThat(sftpConnection.isExist(path), is(false));

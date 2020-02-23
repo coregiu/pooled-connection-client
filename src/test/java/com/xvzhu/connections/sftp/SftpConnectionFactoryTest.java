@@ -59,12 +59,13 @@ public class SftpConnectionFactoryTest {
 
     @Test
     public void should_successfully_when_create_connection_using_correct_info() throws ConnectionException, JSchException {
-        ISftpConnection sftpConnection = SftpConnectionFactory.builder().connectionBean(connectionBean).build().create();
+        SftpConnectionFactory build = SftpConnectionFactory.builder().connectionBean(connectionBean).build();
+        ISftpConnection sftpConnection = build.create();
         try {
             assertThat(sftpConnection.currentDirectory() != null, is(true));
         } finally {
-            sftpConnection.getChannelSftp().disconnect();
-            sftpConnection.getChannelSftp().getSession().disconnect();
+            PooledObject<ISftpConnection> pooledObject = build.wrap(sftpConnection);
+            build.destroyObject(pooledObject);
         }
     }
 
@@ -73,14 +74,13 @@ public class SftpConnectionFactoryTest {
         expectedException.expect(ConnectionException.class);
         expectedException.expectMessage("Failed to connect the ftp server");
         ConnectionBean connectionBean1 = ConnectionBeanBuilder.builder().password("").build().getConnectionBean();
-        ISftpConnection sftpConnection = SftpConnectionFactory.builder().connectionBean(connectionBean1).build().create();
+        SftpConnectionFactory build = SftpConnectionFactory.builder().connectionBean(connectionBean1).build();
+        ISftpConnection sftpConnection = build.create();
         try {
             assertThat(sftpConnection.currentDirectory() != null, is(true));
         } finally {
-            if (sftpConnection != null) {
-                sftpConnection.getChannelSftp().disconnect();
-                sftpConnection.getChannelSftp().getSession().disconnect();
-            }
+            PooledObject<ISftpConnection> pooledObject = build.wrap(sftpConnection);
+            build.destroyObject(pooledObject);
         }
     }
 
@@ -95,10 +95,8 @@ public class SftpConnectionFactoryTest {
             sftpConnectionFactory.destroyObject(connectionPool);
             assertThat(sftpConnectionFactory.validateObject(connectionPool), is(false));
         } finally {
-            if (sftpConnection != null) {
-                sftpConnection.getChannelSftp().disconnect();
-                sftpConnection.getChannelSftp().getSession().disconnect();
-            }
+            PooledObject<ISftpConnection> pooledObject = sftpConnectionFactory.wrap(sftpConnection);
+            sftpConnectionFactory.destroyObject(pooledObject);
         }
     }
 

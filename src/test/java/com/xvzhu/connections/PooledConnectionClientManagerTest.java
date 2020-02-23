@@ -12,6 +12,8 @@ import com.xvzhu.connections.data.ConnectionBeanBuilder;
 import com.xvzhu.connections.mockserver.SftpServer;
 import com.xvzhu.connections.sftp.SftpConnectionFactory;
 import com.xvzhu.connections.sftp.SftpImplTest;
+import org.apache.commons.pool2.impl.AbandonedConfig;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -63,6 +65,26 @@ public class PooledConnectionClientManagerTest {
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
         IConnectionManager manager = PooledClientConnectionManager.builder()
                 .setBorrowMaxWaitTimeMS(8000)
+                .build(connectionBean, ISftpConnection.class);
+        try {
+            ISftpConnection sftpConnection = manager.borrowConnection(connectionBean, ISftpConnection.class);
+            LOG.error("current path = {}", sftpConnection.currentDirectory());
+            assertTrue(sftpConnection.currentDirectory().length() > 0);
+        } finally {
+            manager.releaseConnection(connectionBean);
+            manager.closeConnection(connectionBean);
+        }
+    }
+
+    @Test
+    public void should_change_connection_configuration_when_create_pooled_manager_with_parameters() throws ConnectionException {
+        ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
+        IConnectionManager manager = PooledClientConnectionManager.builder()
+                .setBorrowMaxWaitTimeMS(8000)
+                .setAbandonedConfig(new AbandonedConfig())
+                .setConnectionConfig(new GenericObjectPoolConfig<>())
+                .setSchedulePeriodTimeMS(10000)
+                .setAutoInspect(false)
                 .build(connectionBean, ISftpConnection.class);
         try {
             ISftpConnection sftpConnection = manager.borrowConnection(connectionBean, ISftpConnection.class);

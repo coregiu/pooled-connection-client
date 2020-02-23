@@ -50,7 +50,7 @@ public class OperationFactoryTest {
     public void should_release_current_basic_connections_when_basic_connection_reuse_time_out() {
         Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
-        ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "huawei", "huawei");
+        ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "test", "test");
         Map<Thread, ConnectionManagerBean> managerBeanMap = new HashMap<>();
         ConnectionManagerBean managerBean =
                 ConnectionManagerBean.builder()
@@ -70,7 +70,7 @@ public class OperationFactoryTest {
     public void should_not_release_current_basic_connections_when_basic_connection_reuse_time_not_out() {
         Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
-        ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "huawei", "huawei");
+        ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "test", "test");
         Map<Thread, ConnectionManagerBean> managerBeanMap = new HashMap<>();
         ConnectionManagerBean managerBean =
                 ConnectionManagerBean.builder()
@@ -89,7 +89,7 @@ public class OperationFactoryTest {
         Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
 
         long timeNow = Calendar.getInstance().getTimeInMillis();
-        ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "huawei", "huawei");
+        ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "test", "test");
         Map<Thread, ConnectionManagerBean> managerBeanMap = new HashMap<>();
         ConnectionManagerBean managerBean =
                 ConnectionManagerBean.builder()
@@ -108,7 +108,7 @@ public class OperationFactoryTest {
     public void should_not_close_current_basic_connections_when_basic_connection_close_time_not_out() {
         Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
-        ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "huawei", "huawei");
+        ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "test", "test");
         Map<Thread, ConnectionManagerBean> managerBeanMap = new HashMap<>();
         ConnectionManagerBean managerBean =
                 ConnectionManagerBean.builder()
@@ -127,7 +127,7 @@ public class OperationFactoryTest {
     public void should_release_all_basic_connections_when_basic_connection_reuse_time_out() {
         Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
-        ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "huawei", "huawei");
+        ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "test", "test");
         Map<Thread, ConnectionManagerBean> managerBeanMap = new HashMap<>();
         ConnectionManagerBean managerBean =
                 ConnectionManagerBean.builder()
@@ -137,7 +137,7 @@ public class OperationFactoryTest {
         managerBeanMap.put(Thread.currentThread(), managerBean);
         connections.put(connectionBean, managerBeanMap);
 
-        ConnectionBean connectionBean1 = new ConnectionBean("192.168.1.2", 22, "huawei", "huawei");
+        ConnectionBean connectionBean1 = new ConnectionBean("192.168.1.2", 22, "test", "test");
         Map<Thread, ConnectionManagerBean> managerBeanMap1 = new HashMap<>();
         ConnectionManagerBean managerBean1 =
                 ConnectionManagerBean.builder()
@@ -147,7 +147,7 @@ public class OperationFactoryTest {
         managerBeanMap1.put(Thread.currentThread(), managerBean1);
         connections.put(connectionBean1, managerBeanMap1);
 
-        ConnectionBean connectionBean2 = new ConnectionBean("192.168.1.3", 22, "huawei", "huawei");
+        ConnectionBean connectionBean2 = new ConnectionBean("192.168.1.3", 22, "test", "test");
         Map<Thread, ConnectionManagerBean> managerBeanMap2 = new HashMap<>();
         ConnectionManagerBean managerBean2 =
                 ConnectionManagerBean.builder()
@@ -171,7 +171,7 @@ public class OperationFactoryTest {
     public void should_close_all_basic_connections_when_basic_connection_close_time_out() throws JSchException{
         Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
-        ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "huawei", "huawei");
+        ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "test", "test");
         Map<Thread, ConnectionManagerBean> managerBeanMap = new HashMap<>();
         ConnectionManagerBean managerBean =
                 ConnectionManagerBean.builder()
@@ -182,7 +182,7 @@ public class OperationFactoryTest {
         managerBeanMap.put(Thread.currentThread(), managerBean);
         connections.put(connectionBean, managerBeanMap);
 
-        ConnectionBean connectionBean1 = new ConnectionBean("192.168.1.2", 22, "huawei", "huawei");
+        ConnectionBean connectionBean1 = new ConnectionBean("192.168.1.2", 22, "test", "test");
         Map<Thread, ConnectionManagerBean> managerBeanMap1 = new HashMap<>();
         ConnectionManagerBean managerBean1 =
                 ConnectionManagerBean.builder()
@@ -193,7 +193,7 @@ public class OperationFactoryTest {
         managerBeanMap1.put(Thread.currentThread(), managerBean1);
         connections.put(connectionBean1, managerBeanMap1);
 
-        ConnectionBean connectionBean2 = new ConnectionBean("192.168.1.3", 22, "huawei", "huawei");
+        ConnectionBean connectionBean2 = new ConnectionBean("192.168.1.3", 22, "test", "test");
         Map<Thread, ConnectionManagerBean> managerBeanMap2 = new HashMap<>();
         ConnectionManagerBean managerBean2 =
                 ConnectionManagerBean.builder()
@@ -215,7 +215,7 @@ public class OperationFactoryTest {
     public void should_close_all_basic_connections_when_basic_connections_exceed_max_limit() throws JSchException{
         Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
-        ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "huawei", "huawei");
+        ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "test", "test");
         Map<Thread, ConnectionManagerBean> managerBeanMap = new HashMap<>();
 
         managerBeanMap.put(Thread.currentThread(), ConnectionManagerBean.builder()

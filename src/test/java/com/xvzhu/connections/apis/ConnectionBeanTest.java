@@ -27,43 +27,43 @@ public class ConnectionBeanTest {
 
     @Test
     public void should_return_true_when_input_same_connection_info() {
-        ConnectionBean beanFst = new ConnectionBean("192.168.0.1", 80, "huawei", "huawei");
-        ConnectionBean beanSnd = new ConnectionBean("192.168.0.1", 80, "huawei", "huawei");
+        ConnectionBean beanFst = new ConnectionBean("192.168.0.1", 80, "test", "test");
+        ConnectionBean beanSnd = new ConnectionBean("192.168.0.1", 80, "test", "test");
         assertThat(beanFst.hashCode() == beanSnd.hashCode(), is(true));
     }
 
     @Test
     public void should_return_false_when_input_not_same_connection_info() {
-        ConnectionBean beanFst = new ConnectionBean("192.168.0.1", 80, "huawei", "huawei");
-        ConnectionBean beanSnd = new ConnectionBean("192.168.0.2", 80, "huawei", "huawei");
+        ConnectionBean beanFst = new ConnectionBean("192.168.0.1", 80, "test", "test");
+        ConnectionBean beanSnd = new ConnectionBean("192.168.0.2", 80, "test", "test");
         assertThat(beanFst.hashCode() == beanSnd.hashCode(), is(false));
     }
 
     @Test
     public void should_get_same_object_when_input_same_host() {
         Map<ConnectionBean, String> map = new HashMap<>();
-        map.put(new ConnectionBean("192.168.0.1", 80, "huawei", "huawei"), "huawei");
-        assertThat(map.get(new ConnectionBean("192.168.0.1", 80, "huawei", "huawei")), is("huawei"));
+        map.put(new ConnectionBean("192.168.0.1", 80, "test", "test"), "test");
+        assertThat(map.get(new ConnectionBean("192.168.0.1", 80, "test", "test")), is("test"));
     }
 
     @Test
     public void should_throw_null_point_exception_when_input_null_username() {
         expectedException.expect(NullPointerException.class);
         expectedException.expectMessage("username is marked @NonNull but is null");
-        new ConnectionBean("192.168.0.1", 80, null, "huawei");
+        new ConnectionBean("192.168.0.1", 80, null, "test");
     }
 
     @Test
     public void should_throw_null_point_exception_when_input_null_host() {
         expectedException.expect(NullPointerException.class);
         expectedException.expectMessage("host is marked @NonNull but is null");
-        new ConnectionBean(null, 80, "huawei", "huawei");
+        new ConnectionBean(null, 80, "test", "test");
     }
 
     @Test
     public void should_throw_null_point_exception_when_input_null_password() {
         expectedException.expect(NullPointerException.class);
         expectedException.expectMessage("password is marked @NonNull but is null");
-        new ConnectionBean("192.168.0.1", 80, "huawei", null);
+        new ConnectionBean("192.168.0.1", 80, "test", null);
     }
 }

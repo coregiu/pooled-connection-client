@@ -17,8 +17,8 @@ import lombok.NonNull;
 public class ConnectionBeanBuilder {
     public static final int PORT = 2222;
     public static final String HOST = "127.0.0.1";
-    public static final String USERNAME = "huawei";
-    public static final String PASSWORD = "huawei";
+    public static final String USERNAME = "test";
+    public static final String PASSWORD = "test";
 
     @NonNull
     @Builder.Default
