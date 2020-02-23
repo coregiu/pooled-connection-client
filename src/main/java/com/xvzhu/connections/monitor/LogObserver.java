@@ -20,7 +20,7 @@ import java.util.Map;
  * @since Date : 2020-02-15 14:17
  */
 public class LogObserver implements IObserver {
-    private static Logger LOG = LoggerFactory.getLogger(LogObserver.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LogObserver.class);
 
     /**
      * <p>The monitor for log print.</p>

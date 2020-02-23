@@ -6,7 +6,6 @@ import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.ConnectionManagerConfig;
 import com.xvzhu.connections.apis.protocol.IConnection;
 import com.xvzhu.connections.apis.ConnectionManagerBean;
-import com.xvzhu.connections.sftp.SftpConnectionFactory;
 import lombok.NonNull;
 import org.apache.commons.pool2.BasePooledObjectFactory;
 import org.slf4j.Logger;
@@ -188,12 +187,14 @@ public class OperationFactory {
         LOG.debug("begin to release all the connections of host: {}", connectionBean.getHost());
         long timeNow = Calendar.getInstance().getTimeInMillis();
         // 1. Release timed out and closed connections. Contains reuse and close time out.
-        long releaseSize = hostConnectionMap.entrySet().stream()
+        Set<Map.Entry<Thread, ConnectionManagerBean>> releaseSet
+                = new HashSet<>(hostConnectionMap.size());
+        hostConnectionMap.entrySet().stream()
                 .filter(entry -> entry.getValue().isConnectionBorrowed() &&
                         isTimedOut(timeNow, entry.getValue().getBorrowTime(), config.getBorrowTimeoutMS()))
-                .peek(entry -> setConnection2Idle(entry.getValue()))
-                .count();
-        LOG.warn("release size = {}", releaseSize);
+                .forEach(releaseSet::add);
+        LOG.warn("release size = {}", releaseSet.size());
+        releaseSet.forEach(entry -> setConnection2Idle(entry.getValue()));
 
         Set<Map.Entry<Thread, ConnectionManagerBean>> closeSet
                 = new HashSet<>(hostConnectionMap.size());

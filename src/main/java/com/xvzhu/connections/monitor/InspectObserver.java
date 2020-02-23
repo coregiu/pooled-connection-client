@@ -19,7 +19,7 @@ import java.util.Map;
  * @since Date : 2020-02-16 12:01
  */
 public class InspectObserver implements IObserver, Runnable {
-    private static Logger LOG = LoggerFactory.getLogger(InspectObserver.class);
+    private static final Logger LOG = LoggerFactory.getLogger(InspectObserver.class);
     private IInspect basicInspect = new BasicInspectImpl();
     private IInspect pooledInspect = new PooledInspectImpl();
     Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections;

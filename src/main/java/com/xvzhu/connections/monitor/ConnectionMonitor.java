@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  * @since Date : 2020-02-15 14:22
  */
 public class ConnectionMonitor implements IConnectionMonitor {
-    private static Logger LOG = LoggerFactory.getLogger(ConnectionMonitor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ConnectionMonitor.class);
     private static final int DEFAULT_OBSERVERS = 2;
     private static final long DEFAULT_INTERVAL_TIME_SECOND = 60L;
     private IObserver inspectObserver = new InspectObserver();

@@ -35,6 +35,7 @@ import java.util.Properties;
 public class SftpImpl implements ISftpConnection {
     private static final Logger LOG = LoggerFactory.getLogger(SftpImpl.class);
     private static final String SEPARATOR = "/";
+    public static final String DIRECTORY_NOT_EXISTS = "Directory not exists!";
     private static Properties sshConfig = new Properties();
     private static final String CHANNEL_TYPE = "sftp";
     private ChannelSftp channelSftp;
@@ -153,7 +154,7 @@ public class SftpImpl implements ISftpConnection {
     @Override
     public void deleteDirectory(@NonNull String dir) throws ConnectionException {
         if (!isDirectory(dir)) {
-            LOG.error("Directory not exists!");
+            LOG.error(DIRECTORY_NOT_EXISTS);
             return;
         }
         try {
@@ -174,7 +175,7 @@ public class SftpImpl implements ISftpConnection {
     @Override
     public void deleteFile(@NonNull String dir, @NonNull String name) throws ConnectionException {
         if (!isDirectory(dir)) {
-            LOG.error("Directory not exists!");
+            LOG.error(DIRECTORY_NOT_EXISTS);
             return;
         }
         String filePath = dir + SEPARATOR + name;
@@ -248,7 +249,7 @@ public class SftpImpl implements ISftpConnection {
             SftpATTRS attrs = channelSftp.lstat(path);
             return attrs.isDir();
         } catch (SftpException e) {
-            LOG.error("Directory not exists!");
+            LOG.error(DIRECTORY_NOT_EXISTS);
             return false;
         }
     }

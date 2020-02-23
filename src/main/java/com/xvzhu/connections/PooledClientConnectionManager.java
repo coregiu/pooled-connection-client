@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
  * @since Date : 2020-02-16 14:00
  */
 public class PooledClientConnectionManager implements IConnectionManager {
-    private static final Logger LOG = LoggerFactory.getLogger(BasicClientConnectionManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PooledClientConnectionManager.class);
 
     private static ConnectionManagerConfig connectionManagerConfig = ConnectionManagerConfig.builder().build();
 
@@ -60,7 +60,7 @@ public class PooledClientConnectionManager implements IConnectionManager {
             return (T) connectionPool.borrowObject(connectionManagerConfig.getBorrowMaxWaitTimeMS());
         } catch (Exception e) {
             LOG.error("Failed to borrow connection", e);
-            throw new ConnectionException("Failed to borrow connection.", e);
+            throw new ConnectionException("Failed to borrow connection.");
         }
     }
 

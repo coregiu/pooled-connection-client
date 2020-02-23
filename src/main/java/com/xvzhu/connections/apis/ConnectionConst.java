@@ -18,4 +18,8 @@ public class ConnectionConst {
      * The time out of connect.
      */
     public static final int DEFAULT_CONNECT_TIME_OUT_MS = 5000;
+
+    private ConnectionConst() {
+
+    }
 }
