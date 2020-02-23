@@ -274,6 +274,7 @@ public class BasicClientConnectionManager implements IConnectionManager {
          */
         public BasicSftpClientConnectionManagerBuilder setAutoInspect(boolean autoInspect) {
             connectionManagerConfig.setAutoInspect(autoInspect);
+            connectionMonitor.setAutoInspect(autoInspect);
             return this;
         }
 

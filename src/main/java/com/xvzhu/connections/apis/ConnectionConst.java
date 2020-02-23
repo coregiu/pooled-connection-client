@@ -23,6 +23,11 @@ public class ConnectionConst {
      */
     public static final int DEFAULT_CONNECT_TIME_OUT_MS = 5000;
 
+    /**
+     * The constant POOLED_DEFAULT_THREAD_NAME.
+     */
+    public static final String POOLED_DEFAULT_THREAD_NAME = "Pooled-default-thread";
+
     private ConnectionConst() {
 
     }

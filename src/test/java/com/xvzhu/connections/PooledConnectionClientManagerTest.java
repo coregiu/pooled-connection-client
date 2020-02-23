@@ -59,13 +59,11 @@ public class PooledConnectionClientManagerTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void should_successfully_borrow_connection_when_create_new_pooled_manager() throws ConnectionException {
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
         IConnectionManager manager = PooledClientConnectionManager.builder()
                 .setBorrowMaxWaitTimeMS(8000)
-                .setConnectionBean(connectionBean)
-                .build(ISftpConnection.class);
+                .build(connectionBean, ISftpConnection.class);
         try {
             ISftpConnection sftpConnection = manager.borrowConnection(connectionBean, ISftpConnection.class);
             LOG.error("current path = {}", sftpConnection.currentDirectory());

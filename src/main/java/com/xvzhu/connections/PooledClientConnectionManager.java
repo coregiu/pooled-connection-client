@@ -6,6 +6,7 @@ package com.xvzhu.connections;
 
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
+import com.xvzhu.connections.apis.ConnectionManagerBean;
 import com.xvzhu.connections.apis.ConnectionManagerConfig;
 import com.xvzhu.connections.apis.protocol.IConnection;
 import com.xvzhu.connections.apis.IConnectionManager;
@@ -19,6 +20,8 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The type Pooled sftp client connection manager.
@@ -29,14 +32,22 @@ import org.slf4j.LoggerFactory;
  */
 public class PooledClientConnectionManager implements IConnectionManager {
     private static final Logger LOG = LoggerFactory.getLogger(PooledClientConnectionManager.class);
+    private static final int DEFAULT_MAX_CONNECTION_SIZE = 8;
 
     private static ConnectionManagerConfig connectionManagerConfig = ConnectionManagerConfig.builder().build();
 
     private static OperationFactory operationFactory = new OperationFactory(connectionManagerConfig);
 
-    private IConnectionMonitor connectionMonitor = ConnectionMonitor.getInstance();
+    private static IConnectionMonitor connectionMonitor = ConnectionMonitor.getInstance();
 
     private GenericObjectPool<IConnection> connectionPool;
+
+    /**
+     * monitor container.<br>
+     * Static container for monitor all connections for each host, thread.
+     */
+    private static Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections
+            = new ConcurrentHashMap<>(DEFAULT_MAX_CONNECTION_SIZE);
 
     /**
      * Instantiates a new Pooled sftp client connection manager.
@@ -60,6 +71,7 @@ public class PooledClientConnectionManager implements IConnectionManager {
     @SuppressWarnings("unchecked")
     public <T extends IConnection> T borrowConnection(ConnectionBean connectionBean, Class<T> clazz)
             throws ConnectionException {
+        connectionMonitor.notifyObservers(this, connectionBean, connections);
         try {
             return (T) connectionPool.borrowObject(connectionManagerConfig.getBorrowMaxWaitTimeMS());
         } catch (Exception e) {
@@ -87,6 +99,8 @@ public class PooledClientConnectionManager implements IConnectionManager {
     public void closeConnection(ConnectionBean connectionBean) {
         LOG.warn("Close the connection pool{}", connectionBean.getHost());
         connectionPool.close();
+        connections.remove(connectionBean);
+        connectionMonitor.notifyObservers(this, connectionBean, connections);
     }
 
     /**
@@ -97,7 +111,7 @@ public class PooledClientConnectionManager implements IConnectionManager {
      */
     @Override
     public void accept(IObserver observer, ConnectionBean connectionBean) {
-        observer.visit(this, connectionBean, null);
+        observer.visit(this, connectionBean, connections);
     }
 
     /**
@@ -125,7 +139,6 @@ public class PooledClientConnectionManager implements IConnectionManager {
     public static class PooledSftpClientConnectionManagerBuilder {
         private GenericObjectPoolConfig<IConnection> connectionConfig = new GenericObjectPoolConfig<>();
         private AbandonedConfig abandonedConfig = new AbandonedConfig();
-        private ConnectionBean connectionBean;
 
         /**
          * Sets connection config.
@@ -161,31 +174,66 @@ public class PooledClientConnectionManager implements IConnectionManager {
         }
 
         /**
-         * Sets connection bean.
+         * Sets schedule period time ms.
          *
-         * @param connectionBean the connection bean
-         * @return the connection bean
+         * @param schedulePeriodTimeMS the schedule period time ms
+         * @return the schedule period time ms
          */
-        public PooledSftpClientConnectionManagerBuilder setConnectionBean(ConnectionBean connectionBean) {
-            this.connectionBean = connectionBean;
+        public PooledSftpClientConnectionManagerBuilder setSchedulePeriodTimeMS(long schedulePeriodTimeMS) {
+            connectionManagerConfig.setSchedulePeriodTimeMS(schedulePeriodTimeMS);
+            connectionMonitor.setIntervalTimeSecond(schedulePeriodTimeMS);
+            return this;
+        }
+
+        /**
+         * Sets auto inspect.
+         *
+         * @param autoInspect the auto inspect
+         * @return the auto inspect
+         */
+        public PooledSftpClientConnectionManagerBuilder setAutoInspect(boolean autoInspect) {
+            connectionManagerConfig.setAutoInspect(autoInspect);
+            connectionMonitor.setAutoInspect(autoInspect);
             return this;
         }
 
         /**
          * Build pooled sftp client connection manager.
          *
-         * @param type the type
+         * @param connectionBean the connection bean
+         * @param type           the type
          * @return the pooled sftp client connection manager
          * @throws ConnectionException the connection exception
          */
-        @SuppressWarnings("unchecked")
-        public PooledClientConnectionManager build(Class type) throws ConnectionException{
-            BasePooledObjectFactory connectionFactory
-                    = operationFactory.createConnectionFactory(connectionBean, connectionManagerConfig, type);
-            GenericObjectPool<IConnection> connectionPool
-                    = new GenericObjectPool(connectionFactory, connectionConfig, abandonedConfig);
+        public PooledClientConnectionManager build(ConnectionBean connectionBean, Class type) throws ConnectionException{
+            GenericObjectPool<IConnection> connectionPool;
+            if (connections.get(connectionBean) != null) {
+                Map<Thread, ConnectionManagerBean> managerBeanMap = connections.get(connectionBean);
+                if (managerBeanMap.get(Thread.currentThread()) != null) {
+                    connectionPool = connections.get(connectionBean).get(Thread.currentThread()).getConnectionPool();
+                } else {
+                    connectionPool = generatePool(connectionBean, type, managerBeanMap);
+                }
+            } else {
+                Map<Thread, ConnectionManagerBean> managerBeanMap = new ConcurrentHashMap<>();
+                connectionPool = generatePool(connectionBean, type, managerBeanMap);
+            }
 
             return new PooledClientConnectionManager(connectionPool);
+        }
+
+        @SuppressWarnings("unchecked")
+        private GenericObjectPool<IConnection> generatePool(ConnectionBean connectionBean,
+                                                            Class type,
+                                                            Map<Thread, ConnectionManagerBean> managerBeanMap)
+                throws ConnectionException {
+            GenericObjectPool<IConnection> connectionPool;
+            BasePooledObjectFactory connectionFactory
+                    = operationFactory.createConnectionFactory(connectionBean, connectionManagerConfig, type);
+            connectionPool = new GenericObjectPool(connectionFactory, connectionConfig, abandonedConfig);
+            ConnectionManagerBean managerBean = ConnectionManagerBean.builder().connectionPool(connectionPool).build();
+            managerBeanMap.put(Thread.currentThread(), managerBean);
+            return connectionPool;
         }
     }
 }

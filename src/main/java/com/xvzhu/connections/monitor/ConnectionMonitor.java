@@ -85,11 +85,11 @@ public class ConnectionMonitor implements IConnectionMonitor {
 
     @Override
     public void setAutoInspect(boolean isAutoInspect) {
+        if (scheduleFuture != null) {
+            scheduleFuture.cancel(true);
+        }
         if (isAutoInspect) {
-            scheduleFuture.cancel(true);
             scheduleFuture = executor.scheduleAtFixedRate(inspectObserver, 0, intervalTimeSecond, TimeUnit.MILLISECONDS);
-        } else {
-            scheduleFuture.cancel(true);
         }
     }
 
