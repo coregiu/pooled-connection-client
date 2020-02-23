@@ -21,43 +21,45 @@ import java.util.Locale;
 /**
  * The type Pooled sftp client connection manager.
  *
- * @param <T> the type parameter
  * @author : xvzhu
  * @version V1.0
  * @since Date : 2020-02-16 14:00
  */
-public class PooledClientConnectionManager<T extends IConnection> implements IConnectionManager {
+public class PooledClientConnectionManager implements IConnectionManager {
     private static final Logger LOG = LoggerFactory.getLogger(BasicClientConnectionManager.class);
 
     private static ConnectionManagerConfig connectionManagerConfig = ConnectionManagerConfig.builder().build();
 
     private IConnectionMonitor connectionMonitor = ConnectionMonitor.getInstance();
 
-    private GenericObjectPool<T> connectionPool;
+    private GenericObjectPool<IConnection> connectionPool;
 
     /**
      * Instantiates a new Pooled sftp client connection manager.
      *
      * @param connectionPool the connection pool
      */
-    public PooledClientConnectionManager(GenericObjectPool<T> connectionPool) {
+    public PooledClientConnectionManager(GenericObjectPool<IConnection> connectionPool) {
         this.connectionPool = connectionPool;
     }
 
     /**
      * Borrow connection connection.
      *
+     * @param <T>            the type parameter
      * @param connectionBean the connection bean
+     * @param clazz          the clazz
      * @return the connection
      * @throws ConnectionException the connection exception
      */
     @Override
-    public IConnection borrowConnection(ConnectionBean connectionBean) throws ConnectionException {
+    @SuppressWarnings("unchecked")
+    public <T> T borrowConnection(ConnectionBean connectionBean, Class<T> clazz) throws ConnectionException {
         try {
-            return connectionPool.borrowObject(connectionManagerConfig.getBorrowMaxWaitTimeMS());
+            return (T) connectionPool.borrowObject(connectionManagerConfig.getBorrowMaxWaitTimeMS());
         } catch (Exception e) {
             LOG.error("Failed to borrow connection", e);
-            throw new ConnectionException("Failed to borrow connection, host:{}", connectionBean.getHost());
+            throw new ConnectionException("Failed to borrow connection.", e);
         }
     }
 
@@ -65,7 +67,6 @@ public class PooledClientConnectionManager<T extends IConnection> implements ICo
      * Release connection.
      *
      * @param connectionBean the connection bean
-     * @throws ConnectionException the connection exception
      */
     @Override
     public void releaseConnection(ConnectionBean connectionBean) {
@@ -76,7 +77,6 @@ public class PooledClientConnectionManager<T extends IConnection> implements ICo
      * Close connection.
      *
      * @param connectionBean the connection bean
-     * @throws ConnectionException the connection exception
      */
     @Override
     public void closeConnection(ConnectionBean connectionBean) {
@@ -175,10 +175,10 @@ public class PooledClientConnectionManager<T extends IConnection> implements ICo
          * @return the pooled sftp client connection manager
          * @throws ConnectionException the connection exception
          */
-        public PooledClientConnectionManager<T> build(Class<T> type) throws ConnectionException {
+        public PooledClientConnectionManager build(Class<T> type) throws ConnectionException {
             if (ISftpConnection.class.equals(type)) {
                 SftpConnectionFactory sftpConnectionFactory = SftpConnectionFactory.builder().connectionBean(connectionBean).build();
-                GenericObjectPool<T> connectionPool = new GenericObjectPool(sftpConnectionFactory, connectionConfig, abandonedConfig);
+                GenericObjectPool<IConnection> connectionPool = new GenericObjectPool(sftpConnectionFactory, connectionConfig, abandonedConfig);
 
                 return new PooledClientConnectionManager(connectionPool);
             }

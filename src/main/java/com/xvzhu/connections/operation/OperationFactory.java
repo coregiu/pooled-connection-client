@@ -46,7 +46,7 @@ public class OperationFactory {
      * @return the release consumer
      */
     public Consumer<Map.Entry<ConnectionBean, Map<Thread, ConnectionManagerBean>>> getReleaseConsumer() {
-        return entry -> releaseSftpConnection(entry.getKey(), entry.getValue());
+        return entry -> releaseConnection(entry.getKey(), entry.getValue());
     }
 
     /**
@@ -55,15 +55,15 @@ public class OperationFactory {
      * @return the release biConsumer
      */
     public BiConsumer<ConnectionBean, Map<Thread, ConnectionManagerBean>> getReleaseBiConsumer() {
-        return this::releaseSftpConnection;
+        return this::releaseConnection;
     }
 
     /**
-     * Release a connection.
+     * Release to manager.
      *
      * @param managerBean the manager bean
      */
-    public void releaseAConnection(@NonNull ConnectionManagerBean managerBean) {
+    public void setConnection2Idle(@NonNull ConnectionManagerBean managerBean) {
         managerBean.setReleaseTime(Calendar.getInstance().getTimeInMillis());
         managerBean.setConnectionBorrowed(false);
     }
@@ -74,8 +74,8 @@ public class OperationFactory {
      * @param thread            the thread
      * @param hostConnectionMap the host connection map
      */
-    public void closeAConnection(@NonNull Thread thread,
-                                 @NonNull Map<Thread, ConnectionManagerBean> hostConnectionMap) {
+    public void shutdownConnection(@NonNull Thread thread,
+                                   @NonNull Map<Thread, ConnectionManagerBean> hostConnectionMap) {
         ConnectionManagerBean managerBean = hostConnectionMap.get(thread);
         // double check.
         if (managerBean == null) {
@@ -93,11 +93,11 @@ public class OperationFactory {
         hostConnectionMap.remove(thread);
     }
 
-    private void releaseSftpConnection(ConnectionBean connectionBean,
-                                       Map<Thread, ConnectionManagerBean> hostConnectionMap) {
+    private void releaseConnection(ConnectionBean connectionBean,
+                                   Map<Thread, ConnectionManagerBean> hostConnectionMap) {
         if (Thread.currentThread().getName().equals(ConnectionConst.SCHEDULE_THREAD_NAME)) {
             synchronized (LOCK) {
-                releaseAllConnections(connectionBean, hostConnectionMap);
+                batchReleaseAction(connectionBean, hostConnectionMap);
             }
         } else {
             if (hostConnectionMap == null || hostConnectionMap.get(Thread.currentThread()) == null) {
@@ -105,20 +105,20 @@ public class OperationFactory {
             }
             ConnectionManagerBean managerBean = hostConnectionMap.get(Thread.currentThread());
             synchronized (managerBean.getLock()) {
-                releaseCurrentConnection(hostConnectionMap);
+                singleReleaseAction(hostConnectionMap);
             }
         }
     }
 
-    private void releaseAllConnections(ConnectionBean connectionBean,
-                                       Map<Thread, ConnectionManagerBean> hostConnectionMap) {
+    private void batchReleaseAction(ConnectionBean connectionBean,
+                                    Map<Thread, ConnectionManagerBean> hostConnectionMap) {
         LOG.debug("begin to release all the connections of host: {}", connectionBean.getHost());
         long timeNow = Calendar.getInstance().getTimeInMillis();
         // 1. Release timed out and closed connections. Contains reuse and close time out.
         long releaseSize = hostConnectionMap.entrySet().stream()
                 .filter(entry -> entry.getValue().isConnectionBorrowed() &&
                         isTimedOut(timeNow, entry.getValue().getBorrowTime(), config.getBorrowTimeoutMS()))
-                .peek(entry -> releaseAConnection(entry.getValue()))
+                .peek(entry -> setConnection2Idle(entry.getValue()))
                 .count();
         LOG.warn("release size = {}", releaseSize);
 
@@ -129,7 +129,7 @@ public class OperationFactory {
                         isTimedOut(timeNow, entry.getValue().getReleaseTime(), config.getIdleTimeoutMS()))
                 .forEach(closeSet::add);
         LOG.warn("shutdown size = {}", closeSet.size());
-        closeSet.forEach(entry -> closeAConnection(entry.getKey(), hostConnectionMap));
+        closeSet.forEach(entry -> shutdownConnection(entry.getKey(), hostConnectionMap));
 
         // 2. Release unused connection if connections is exceed the max size.
         int hostConnectionRemainSize = hostConnectionMap.size() - config.getMaxConnectionSize();
@@ -142,24 +142,24 @@ public class OperationFactory {
                 .filter(entry -> (!entry.getValue().isConnectionBorrowed()))
                 .forEach(clearSet::add);
         LOG.warn("shutdown by connection size check, size = {}", clearSet.size());
-        clearSet.forEach(entry -> closeAConnection(entry.getKey(), hostConnectionMap));
+        clearSet.forEach(entry -> shutdownConnection(entry.getKey(), hostConnectionMap));
     }
 
-    private boolean isTimedOut(long timeNow, long checkTime, int timedout) {
-        return timeNow - checkTime > timedout;
+    private boolean isTimedOut(long timeNow, long checkTime, int timeout) {
+        return timeNow - checkTime > timeout;
     }
 
-    private void releaseCurrentConnection(Map<Thread, ConnectionManagerBean> hostConnectionMap) {
+    private void singleReleaseAction(Map<Thread, ConnectionManagerBean> hostConnectionMap) {
         Thread releaseThread = Thread.currentThread();
         ConnectionManagerBean managerBean = hostConnectionMap.get(Thread.currentThread());
         long timeNow = Calendar.getInstance().getTimeInMillis();
 
         if (managerBean.isConnectionBorrowed() && isTimedOut(timeNow,
                 managerBean.getBorrowTime(), config.getBorrowTimeoutMS())) {
-            releaseAConnection(managerBean);
+            setConnection2Idle(managerBean);
         } else if (!managerBean.isConnectionBorrowed() && isTimedOut(timeNow,
                 managerBean.getReleaseTime(), config.getIdleTimeoutMS())){
-            closeAConnection(releaseThread, hostConnectionMap);
+            shutdownConnection(releaseThread, hostConnectionMap);
         } else {
             LOG.info("Do nothing");
         }

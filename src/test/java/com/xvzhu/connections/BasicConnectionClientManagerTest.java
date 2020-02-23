@@ -69,7 +69,7 @@ public class BasicConnectionClientManagerTest {
                 .build();
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
         try {
-            ISftpConnection sftpConnection = (ISftpConnection) manager.borrowConnection(connectionBean);
+            ISftpConnection sftpConnection = manager.borrowConnection(connectionBean, ISftpConnection.class);
             LOG.error("current path = {}", sftpConnection.currentDirectory());
             assertTrue(sftpConnection.currentDirectory().length() > 0);
         } finally {
@@ -91,7 +91,7 @@ public class BasicConnectionClientManagerTest {
         try {
             new Thread(() -> {
                 try {
-                    manager.borrowConnection(connectionBean);
+                    manager.borrowConnection(connectionBean, ISftpConnection.class);
                 } catch (ConnectionException e) {
                     LOG.error("Failed to borrow the first connection.");
                 } finally {
@@ -99,7 +99,7 @@ public class BasicConnectionClientManagerTest {
                 }
             }).start();
             countDownLatch.await();
-            manager.borrowConnection(connectionBean);
+            manager.borrowConnection(connectionBean, ISftpConnection.class);
         } finally {
             manager.releaseConnection(connectionBean);
             manager.closeConnection(connectionBean);
@@ -116,7 +116,7 @@ public class BasicConnectionClientManagerTest {
                 .build();
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
         try {
-            ISftpConnection sftpConnection = (ISftpConnection) manager.borrowConnection(connectionBean);
+            ISftpConnection sftpConnection = manager.borrowConnection(connectionBean, ISftpConnection.class);
             LOG.error("current path = {}", sftpConnection.currentDirectory());
             assertTrue(sftpConnection.currentDirectory().length() > 0);
 
@@ -124,7 +124,7 @@ public class BasicConnectionClientManagerTest {
             expectedException.expectMessage(String.format(Locale.ENGLISH,
                     "The host : %s, thread :%s's connection has been borrowed!",
                     connectionBean.getHost(), Thread.currentThread().getName()));
-            manager.borrowConnection(connectionBean);
+            manager.borrowConnection(connectionBean, ISftpConnection.class);
         } finally {
             manager.releaseConnection(connectionBean);
             manager.closeConnection(connectionBean);
@@ -138,12 +138,12 @@ public class BasicConnectionClientManagerTest {
                 .build();
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
         try {
-            ISftpConnection sftpConnection = (ISftpConnection) manager.borrowConnection(connectionBean);
+            ISftpConnection sftpConnection = manager.borrowConnection(connectionBean, ISftpConnection.class);
             LOG.error("current path = {}", sftpConnection.currentDirectory());
             assertTrue(sftpConnection.currentDirectory().length() > 0);
 
             manager.releaseConnection(connectionBean);
-            ISftpConnection sftpConnection1 = (ISftpConnection) manager.borrowConnection(connectionBean);
+            ISftpConnection sftpConnection1 = manager.borrowConnection(connectionBean, ISftpConnection.class);
             assertSame(sftpConnection, sftpConnection1);
         } finally {
             manager.releaseConnection(connectionBean);
@@ -158,12 +158,12 @@ public class BasicConnectionClientManagerTest {
                 .build();
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
         try {
-            ISftpConnection sftpConnection = (ISftpConnection) manager.borrowConnection(connectionBean);
+            ISftpConnection sftpConnection = manager.borrowConnection(connectionBean, ISftpConnection.class);
             LOG.error("current path = {}", sftpConnection.currentDirectory());
             assertTrue(sftpConnection.currentDirectory().length() > 0);
 
             manager.closeConnection(connectionBean);
-            ISftpConnection sftpConnection1 = (ISftpConnection) manager.borrowConnection(connectionBean);
+            ISftpConnection sftpConnection1 = manager.borrowConnection(connectionBean, ISftpConnection.class);
             assertTrue(sftpConnection1.currentDirectory().length() > 0);
             assertNotSame(sftpConnection, sftpConnection1);
         } finally {
@@ -182,12 +182,12 @@ public class BasicConnectionClientManagerTest {
                 .build();
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
         try {
-            ISftpConnection sftpConnection = (ISftpConnection) manager.borrowConnection(connectionBean);
+            ISftpConnection sftpConnection = manager.borrowConnection(connectionBean, ISftpConnection.class);
             LOG.error("current path = {}", sftpConnection.currentDirectory());
             assertTrue(sftpConnection.currentDirectory().length() > 0);
 
             Thread.sleep(10);
-            ISftpConnection sftpConnection1 = (ISftpConnection) manager.borrowConnection(connectionBean);
+            ISftpConnection sftpConnection1 = manager.borrowConnection(connectionBean, ISftpConnection.class);
             assertTrue(sftpConnection1.currentDirectory().length() > 0);
             assertSame(sftpConnection, sftpConnection1);
         } finally {
@@ -212,12 +212,12 @@ public class BasicConnectionClientManagerTest {
                 .build();
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
         try {
-            ISftpConnection sftpConnection = (ISftpConnection) manager.borrowConnection(connectionBean);
+            ISftpConnection sftpConnection = manager.borrowConnection(connectionBean, ISftpConnection.class);
             LOG.error("current path = {}", sftpConnection.currentDirectory());
             assertTrue(sftpConnection.currentDirectory().length() > 0);
 
             Thread.sleep(100);
-            ISftpConnection sftpConnection1 = (ISftpConnection) manager.borrowConnection(connectionBean);
+            ISftpConnection sftpConnection1 = manager.borrowConnection(connectionBean, ISftpConnection.class);
             assertTrue(sftpConnection1.currentDirectory().length() > 0);
             assertNotSame(sftpConnection, sftpConnection1);
         } finally {

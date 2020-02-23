@@ -25,6 +25,7 @@ import static org.junit.Assert.assertThat;
  */
 public class LogObserverTest {
     @Test
+    @SuppressWarnings("unchecked")
     public void should_print_logs_when_manager_is_correct() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         LogObserver logObserver = new LogObserver();
         IConnectionManager connectionManager = BasicClientConnectionManager.builder().build();

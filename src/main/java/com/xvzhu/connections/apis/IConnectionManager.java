@@ -1,26 +1,25 @@
 package com.xvzhu.connections.apis;
 
-import com.xvzhu.connections.apis.protocol.IConnection;
-
 /**
  * Manager API.
  *
- * @param <T> the type parameter
  * @author : xvzhu
  * @version V1.0
  * @since Date : 2020-02-15 14:22
  */
-public interface IConnectionManager<T extends IConnection> {
+public interface IConnectionManager {
     /**
      * <p>Borrow connection connection.</p>
      * If there is no connection, create a new connection, and return.<br>
      * If connection was used, or pool has no connection, throw ConnectionException.<br>
      *
+     * @param <T>            the type parameter
      * @param connectionBean the connection bean
+     * @param clazz          the clazz
      * @return the connection
      * @throws ConnectionException the connection exception
      */
-    T borrowConnection(ConnectionBean connectionBean) throws ConnectionException;
+    <T> T borrowConnection(ConnectionBean connectionBean, Class<T> clazz) throws ConnectionException;
 
     /**
      * <p>Release connection.</p>

@@ -3,7 +3,6 @@ package com.xvzhu.connections;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.ConnectionManagerConfig;
-import com.xvzhu.connections.apis.protocol.IConnection;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.IConnectionMonitor;
 import com.xvzhu.connections.apis.IObserver;
@@ -26,12 +25,11 @@ import java.util.function.Consumer;
  * Each host, thread has a connection.<Br>
  * See the connection {@link IConnectionMonitor}
  *
- * @param <T> the connection type parameter.
  * @author : xvzhu
  * @version V1.0
  * @since Date : 2020-02-15 14:22
  */
-public class BasicClientConnectionManager<T extends IConnection> implements IConnectionManager {
+public class BasicClientConnectionManager implements IConnectionManager {
     private static final Logger LOG = LoggerFactory.getLogger(BasicClientConnectionManager.class);
     private static final Object LOCK = new Object();
     private static final int DEFAULT_MAX_CONNECTION_SIZE = 8;
@@ -75,14 +73,14 @@ public class BasicClientConnectionManager<T extends IConnection> implements ICon
      * @throws ConnectionException the connection exception
      */
     @Override
-    public T borrowConnection(ConnectionBean connectionBean) throws ConnectionException {
+    public <T> T borrowConnection(ConnectionBean connectionBean, Class<T> clazz) throws ConnectionException {
         connectionMonitor.notifyObservers(this, connectionBean, connections);
         Map<Thread, ConnectionManagerBean> threadManagerBeanMap = connections.get(connectionBean);
         if (null == threadManagerBeanMap) {
             LOG.info("Then host {}, thread {} 's do not has any connections!",
                     connectionBean.getHost(),
                     Thread.currentThread().getName());
-            return getAndRegisterNewConnection(connectionBean);
+            return getAndRegisterNewConnection(connectionBean, clazz);
         }
         ConnectionManagerBean managerBean = threadManagerBeanMap.get(Thread.currentThread());
         if (null != managerBean) {
@@ -94,7 +92,7 @@ public class BasicClientConnectionManager<T extends IConnection> implements ICon
                         threadManagerBeanMap.size(), connectionManagerConfig.getMaxConnectionSize());
                 throw new ConnectionException("Failed to borrow connection because of to much connections.");
             } else {
-                return getAndRegisterNewConnection(connectionBean);
+                return getAndRegisterNewConnection(connectionBean, clazz);
             }
         }
     }
@@ -139,9 +137,9 @@ public class BasicClientConnectionManager<T extends IConnection> implements ICon
         }
         synchronized (managerBean.getLock()) {
             if (isShutdown) {
-                operationFactory.closeAConnection(Thread.currentThread(), threadManagerBeanMap);
+                operationFactory.shutdownConnection(Thread.currentThread(), threadManagerBeanMap);
             } else {
-                operationFactory.releaseAConnection(managerBean);
+                operationFactory.setConnection2Idle(managerBean);
             }
         }
     }
@@ -167,7 +165,8 @@ public class BasicClientConnectionManager<T extends IConnection> implements ICon
         connectionMonitor.attach(observer);
     }
 
-    private T reuseConnection(ConnectionBean connectionBean, ConnectionManagerBean managerBean)
+    @SuppressWarnings("unchecked")
+    private <T> T reuseConnection(ConnectionBean connectionBean, ConnectionManagerBean managerBean)
             throws ConnectionException {
         synchronized (managerBean.getLock()) {
             if (managerBean.isConnectionBorrowed()) {
@@ -184,7 +183,7 @@ public class BasicClientConnectionManager<T extends IConnection> implements ICon
         }
     }
 
-    private T getAndRegisterNewConnection(ConnectionBean connectionBean) throws ConnectionException {
+    private <T> T getAndRegisterNewConnection(ConnectionBean connectionBean, Class<T> clazz) throws ConnectionException {
         ConnectionManagerBean managerBean;
         synchronized (LOCK) {
             ISftpConnection connection =
