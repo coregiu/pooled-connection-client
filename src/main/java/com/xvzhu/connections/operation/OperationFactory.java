@@ -6,13 +6,18 @@ import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.ConnectionManagerConfig;
 import com.xvzhu.connections.apis.protocol.IConnection;
 import com.xvzhu.connections.apis.ConnectionManagerBean;
+import com.xvzhu.connections.sftp.SftpConnectionFactory;
 import lombok.NonNull;
+import org.apache.commons.pool2.BasePooledObjectFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Calendar;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -38,6 +43,74 @@ public class OperationFactory {
      */
     public OperationFactory(@NonNull ConnectionManagerConfig connectionManagerConfig) {
         this.config = connectionManagerConfig;
+    }
+
+    /**
+     * Create connection t.
+     *
+     * @param <T>                     the type parameter
+     * @param connectionBean          the connection bean
+     * @param connectionManagerConfig the connection manager config
+     * @param clazz                   the clazz
+     * @return the t
+     * @throws ConnectionException the connection exception
+     */
+    @SuppressWarnings("unchecked")
+    public <T extends IConnection> T createConnection(ConnectionBean connectionBean,
+                                                      ConnectionManagerConfig connectionManagerConfig,
+                                                      Class<T> clazz) throws ConnectionException {
+        Optional<ProtocolDefine> protocolDefine = ProtocolDefine.parseType(clazz.getName());
+        if (!protocolDefine.isPresent()) {
+            LOG.error("The protocol {} is not support now!", clazz.getName());
+            throw new ConnectionException(String.format(Locale.ENGLISH, "The protocol %s is not support now!", clazz.getName()));
+        }
+
+        try {
+            Class connectionClientClass = Class.forName(protocolDefine.get().getConnectionImpl());
+            IConnection connectionClient = (IConnection) connectionClientClass.getConstructor().newInstance();
+            connectionClient.connect(connectionBean, connectionManagerConfig.getConnectionTimeoutMs());
+            return (T) connectionClient;
+        } catch (InstantiationException
+                | IllegalAccessException
+                | InvocationTargetException
+                | NoSuchMethodException
+                | ClassNotFoundException e) {
+            LOG.error("Failed to init the protocol class {}", protocolDefine.get().getConnectionImpl(), e);
+            throw new ConnectionException("Failed to init the protocol class.");
+        }
+    }
+
+    /**
+     * Create connection factory t.
+     *
+     * @param <T>                     the type parameter
+     * @param connectionBean          the connection bean
+     * @param connectionManagerConfig the connection manager config
+     * @param clazz                   the clazz
+     * @return the t
+     * @throws ConnectionException the connection exception
+     */
+    @SuppressWarnings("unchecked")
+    public <T extends BasePooledObjectFactory> T createConnectionFactory(ConnectionBean connectionBean,
+                                                                         ConnectionManagerConfig connectionManagerConfig,
+                                                                         Class<T> clazz) throws ConnectionException {
+        Optional<ProtocolDefine> protocolDefine = ProtocolDefine.parseType(clazz.getName());
+        if (!protocolDefine.isPresent()) {
+            LOG.error("The protocol {} is not support now!", clazz.getName());
+            throw new ConnectionException(String.format(Locale.ENGLISH, "The protocol %s is not support now!", clazz.getName()));
+        }
+
+        try {
+            Class connectionFactoryClass = Class.forName(protocolDefine.get().getConnectionFactory());
+            return (T)connectionFactoryClass.getConstructor(ConnectionBean.class, int.class).newInstance(connectionBean, connectionManagerConfig.getConnectionTimeoutMs());
+        } catch (InstantiationException
+                | IllegalAccessException
+                | InvocationTargetException
+                | NoSuchMethodException
+                | ClassNotFoundException e) {
+            LOG.error("Failed to init the protocol factory class {}", protocolDefine.get().getConnectionImpl(), e);
+            throw new ConnectionException("Failed to init the protocol factory class.");
+        }
     }
 
     /**
@@ -158,7 +231,7 @@ public class OperationFactory {
                 managerBean.getBorrowTime(), config.getBorrowTimeoutMS())) {
             setConnection2Idle(managerBean);
         } else if (!managerBean.isConnectionBorrowed() && isTimedOut(timeNow,
-                managerBean.getReleaseTime(), config.getIdleTimeoutMS())){
+                managerBean.getReleaseTime(), config.getIdleTimeoutMS())) {
             shutdownConnection(releaseThread, hostConnectionMap);
         } else {
             LOG.info("Do nothing");

@@ -7,16 +7,14 @@ import com.xvzhu.connections.apis.protocol.IConnection;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.IConnectionMonitor;
 import com.xvzhu.connections.apis.IObserver;
-import com.xvzhu.connections.apis.protocol.ISftpConnection;
 import com.xvzhu.connections.monitor.ConnectionMonitor;
-import com.xvzhu.connections.sftp.SftpConnectionFactory;
+import com.xvzhu.connections.operation.OperationFactory;
+import org.apache.commons.pool2.BasePooledObjectFactory;
 import org.apache.commons.pool2.impl.AbandonedConfig;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Locale;
 
 /**
  * The type Pooled sftp client connection manager.
@@ -29,6 +27,8 @@ public class PooledClientConnectionManager implements IConnectionManager {
     private static final Logger LOG = LoggerFactory.getLogger(BasicClientConnectionManager.class);
 
     private static ConnectionManagerConfig connectionManagerConfig = ConnectionManagerConfig.builder().build();
+
+    private static OperationFactory operationFactory = new OperationFactory(connectionManagerConfig);
 
     private IConnectionMonitor connectionMonitor = ConnectionMonitor.getInstance();
 
@@ -54,7 +54,8 @@ public class PooledClientConnectionManager implements IConnectionManager {
      */
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T borrowConnection(ConnectionBean connectionBean, Class<T> clazz) throws ConnectionException {
+    public <T extends IConnection> T borrowConnection(ConnectionBean connectionBean, Class<T> clazz)
+            throws ConnectionException {
         try {
             return (T) connectionPool.borrowObject(connectionManagerConfig.getBorrowMaxWaitTimeMS());
         } catch (Exception e) {
@@ -116,11 +117,9 @@ public class PooledClientConnectionManager implements IConnectionManager {
 
     /**
      * The type Pooled sftp client connection manager builder.
-     *
-     * @param <T> the type parameter
      */
-    public static class PooledSftpClientConnectionManagerBuilder<T extends IConnection> {
-        private GenericObjectPoolConfig<T> connectionConfig = new GenericObjectPoolConfig<>();
+    public static class PooledSftpClientConnectionManagerBuilder {
+        private GenericObjectPoolConfig<IConnection> connectionConfig = new GenericObjectPoolConfig<>();
         private AbandonedConfig abandonedConfig = new AbandonedConfig();
         private ConnectionBean connectionBean;
 
@@ -130,7 +129,7 @@ public class PooledClientConnectionManager implements IConnectionManager {
          * @param connectionConfig the connection config
          * @return the connection config
          */
-        public PooledSftpClientConnectionManagerBuilder setConnectionConfig(GenericObjectPoolConfig<T> connectionConfig) {
+        public PooledSftpClientConnectionManagerBuilder setConnectionConfig(GenericObjectPoolConfig<IConnection> connectionConfig) {
             this.connectionConfig = connectionConfig;
             return this;
         }
@@ -175,14 +174,14 @@ public class PooledClientConnectionManager implements IConnectionManager {
          * @return the pooled sftp client connection manager
          * @throws ConnectionException the connection exception
          */
-        public PooledClientConnectionManager build(Class<T> type) throws ConnectionException {
-            if (ISftpConnection.class.equals(type)) {
-                SftpConnectionFactory sftpConnectionFactory = SftpConnectionFactory.builder().connectionBean(connectionBean).build();
-                GenericObjectPool<IConnection> connectionPool = new GenericObjectPool(sftpConnectionFactory, connectionConfig, abandonedConfig);
+        @SuppressWarnings("unchecked")
+        public PooledClientConnectionManager build(Class type) throws ConnectionException{
+            BasePooledObjectFactory connectionFactory
+                    = operationFactory.createConnectionFactory(connectionBean, connectionManagerConfig, type);
+            GenericObjectPool<IConnection> connectionPool
+                    = new GenericObjectPool(connectionFactory, connectionConfig, abandonedConfig);
 
-                return new PooledClientConnectionManager(connectionPool);
-            }
-            throw new ConnectionException(String.format(Locale.ENGLISH, "Protocol %s was not supported", ISftpConnection.class.getName()));
+            return new PooledClientConnectionManager(connectionPool);
         }
     }
 }

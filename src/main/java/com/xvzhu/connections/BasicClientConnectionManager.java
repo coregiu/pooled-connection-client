@@ -6,11 +6,10 @@ import com.xvzhu.connections.apis.ConnectionManagerConfig;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.IConnectionMonitor;
 import com.xvzhu.connections.apis.IObserver;
-import com.xvzhu.connections.apis.protocol.ISftpConnection;
+import com.xvzhu.connections.apis.protocol.IConnection;
 import com.xvzhu.connections.apis.ConnectionManagerBean;
 import com.xvzhu.connections.monitor.ConnectionMonitor;
 import com.xvzhu.connections.operation.OperationFactory;
-import com.xvzhu.connections.sftp.SftpConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +72,8 @@ public class BasicClientConnectionManager implements IConnectionManager {
      * @throws ConnectionException the connection exception
      */
     @Override
-    public <T> T borrowConnection(ConnectionBean connectionBean, Class<T> clazz) throws ConnectionException {
+    public <T extends IConnection> T borrowConnection(ConnectionBean connectionBean, Class<T> clazz)
+            throws ConnectionException {
         connectionMonitor.notifyObservers(this, connectionBean, connections);
         Map<Thread, ConnectionManagerBean> threadManagerBeanMap = connections.get(connectionBean);
         if (null == threadManagerBeanMap) {
@@ -166,7 +166,7 @@ public class BasicClientConnectionManager implements IConnectionManager {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> T reuseConnection(ConnectionBean connectionBean, ConnectionManagerBean managerBean)
+    private <T extends IConnection> T reuseConnection(ConnectionBean connectionBean, ConnectionManagerBean managerBean)
             throws ConnectionException {
         synchronized (managerBean.getLock()) {
             if (managerBean.isConnectionBorrowed()) {
@@ -183,13 +183,11 @@ public class BasicClientConnectionManager implements IConnectionManager {
         }
     }
 
-    private <T> T getAndRegisterNewConnection(ConnectionBean connectionBean, Class<T> clazz) throws ConnectionException {
+    private <T extends IConnection> T getAndRegisterNewConnection(ConnectionBean connectionBean, Class<T> clazz)
+            throws ConnectionException {
         ConnectionManagerBean managerBean;
         synchronized (LOCK) {
-            ISftpConnection connection =
-                    SftpConnectionFactory.builder()
-                            .connectionBean(connectionBean)
-                            .timeoutMilliSecond(connectionManagerConfig.getConnectionTimeoutMs()).build().create();
+            T connection = operationFactory.createConnection(connectionBean, connectionManagerConfig, clazz);
 
             managerBean = ConnectionManagerBean.builder()
                     .isConnectionBorrowed(true)
@@ -200,7 +198,7 @@ public class BasicClientConnectionManager implements IConnectionManager {
             connections.put(connectionBean, managerBeanThreadLocal);
             LOG.debug("New a connection for host {}, thread {}",
                     connectionBean.getHost(), Thread.currentThread().getName());
-            return (T) connection;
+            return connection;
         }
     }
 

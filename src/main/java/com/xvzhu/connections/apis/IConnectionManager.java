@@ -1,5 +1,7 @@
 package com.xvzhu.connections.apis;
 
+import com.xvzhu.connections.apis.protocol.IConnection;
+
 /**
  * Manager API.
  *
@@ -19,7 +21,7 @@ public interface IConnectionManager {
      * @return the connection
      * @throws ConnectionException the connection exception
      */
-    <T> T borrowConnection(ConnectionBean connectionBean, Class<T> clazz) throws ConnectionException;
+    <T extends IConnection> T borrowConnection(ConnectionBean connectionBean, Class<T> clazz) throws ConnectionException;
 
     /**
      * <p>Release connection.</p>

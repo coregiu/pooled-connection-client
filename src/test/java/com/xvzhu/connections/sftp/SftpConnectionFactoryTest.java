@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.CountDownLatch;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -95,5 +96,12 @@ public class SftpConnectionFactoryTest {
                 sftpConnection.getChannelSftp().getSession().disconnect();
             }
         }
+    }
+
+    @Test
+    public void should_init_by_two_parameter_when_invoke_by_operation() {
+        ConnectionBean connectionBean = ConnectionBeanBuilder.builder().build().getConnectionBean();
+        SftpConnectionFactory sftpConnectionFactory = new SftpConnectionFactory(connectionBean, 1000);
+        assertNotNull(sftpConnectionFactory);
     }
 }

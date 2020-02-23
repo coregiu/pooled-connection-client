@@ -3,7 +3,9 @@ package com.xvzhu.connections.sftp;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.protocol.ISftpConnection;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 import org.apache.commons.pool2.BasePooledObjectFactory;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
@@ -18,13 +20,15 @@ import org.slf4j.Logger;
  * @since Date : 2020-02-15 16:13
  */
 @Builder
+@Data
+@AllArgsConstructor
 public class SftpConnectionFactory extends BasePooledObjectFactory<ISftpConnection> {
     private static final Logger LOG = LoggerFactory.getLogger(SftpConnectionFactory.class);
     private static final int DEFAULT_TIME_OUT_MILLI = 15000;
 
+    private ConnectionBean connectionBean;
     @Builder.Default
     private int timeoutMilliSecond = DEFAULT_TIME_OUT_MILLI;
-    private ConnectionBean connectionBean;
 
 
     /**
