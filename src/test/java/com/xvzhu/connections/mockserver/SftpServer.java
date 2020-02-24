@@ -37,11 +37,12 @@ import org.slf4j.LoggerFactory;
 public class SftpServer {
     private static final Logger LOG = LoggerFactory.getLogger(SftpServer.class);
     private static final int MIN_PORT = 5000;
-    private static final int MAX_PORT = 5000;
+    private static final int MAX_PORT = 10000;
     private static final int DEFAULT_RETRY_TIMES = 10;
     private static final BiMap<Integer, String> PORT_MAP = Maps.synchronizedBiMap(HashBiMap.create());
 
     private static AtomicInteger startCount = new AtomicInteger();
+    private static AtomicInteger portCount = new AtomicInteger(MIN_PORT);
     private final SshServer sshd = SshServer.setUpDefaultServer();
 
 
@@ -62,6 +63,7 @@ public class SftpServer {
                     PORT_MAP.put(port, uuid);
                     break;
                 } catch (ConnectionException e) {
+                    portCount.addAndGet(1);
                     LOG.error("Failed to startup sftp server, uuid:{}, port:{}, retrytimes:{}", uuid, port, retryTimes);
                 }
             }
@@ -114,12 +116,12 @@ public class SftpServer {
     }
 
     private int getPort() {
-        for (int i = MIN_PORT; i < MAX_PORT; i++) {
-            if (PORT_MAP.get(i) != null) {
+        for (portCount.get(); portCount.get() < MAX_PORT; portCount.addAndGet(1)) {
+            if (PORT_MAP.get(portCount.get()) != null) {
                 continue;
             }
-            LOG.error("Assign port : {}", i);
-            return i;
+            LOG.error("Assign port : {}", portCount.get());
+            return portCount.get();
         }
         return ConnectionBeanBuilder.PORT;
     }
