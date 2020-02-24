@@ -142,6 +142,7 @@ public class OperationFactory {
     public void setConnection2Idle(@NonNull ConnectionManagerBean managerBean) {
         managerBean.setReleaseTime(Calendar.getInstance().getTimeInMillis());
         managerBean.setConnectionBorrowed(false);
+        LOG.warn("The connection of {} was set to idle", managerBean.hashCode());
     }
 
     /**
@@ -166,6 +167,7 @@ public class OperationFactory {
                 LOG.error("Failed to disconnect", e);
             }
         }
+        LOG.warn("The connection of thread {} was removed", thread.getName());
         hostConnectionMap.remove(thread);
     }
 

@@ -26,7 +26,7 @@ public class InspectObserver implements IObserver, Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(InspectObserver.class);
     private IInspect basicInspect = new BasicInspectImpl();
     private IInspect pooledInspect = new PooledInspectImpl();
-    Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections;
+    private Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections;
 
     @Override
     public void visit(@NonNull IConnectionManager connectionManager,

@@ -123,7 +123,7 @@ public class ConnectionMonitor implements IConnectionMonitor {
                                 @NonNull Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections) {
         LOG.info("Begin to inspect the connection by notify.");
         if (connections.isEmpty()) {
-            LOG.warn("Not connections to handle.");
+            LOG.warn("No connections to handle.");
             return;
         }
         for (IObserver observer : observers) {

@@ -6,12 +6,15 @@ package com.xvzhu.connections;
 
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
+import com.xvzhu.connections.apis.ConnectionManagerBean;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.protocol.ISftpConnection;
 import com.xvzhu.connections.data.ConnectionBeanBuilder;
 import com.xvzhu.connections.mockserver.SftpServer;
 import com.xvzhu.connections.sftp.SftpConnectionFactory;
 import com.xvzhu.connections.sftp.SftpImplTest;
+import org.awaitility.Awaitility;
+import org.awaitility.Duration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -20,9 +23,18 @@ import org.junit.rules.ExpectedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Calendar;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.awaitility.Awaitility.await;
+import static org.awaitility.Awaitility.fieldIn;
+import static org.awaitility.Awaitility.with;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -177,7 +189,7 @@ public class BasicConnectionClientManagerTest {
     }
 
     @Test
-    public void should_auto_release_connections_when_connections_borrow_timed_out() throws ConnectionException, InterruptedException {
+    public void should_auto_release_connections_when_connections_borrow_timed_out() throws ConnectionException, Exception {
         IConnectionManager manager = BasicClientConnectionManager.builder()
                 .setBorrowTimeoutMS(1)
                 .setIdleTimeoutSecond(100000)
@@ -190,7 +202,13 @@ public class BasicConnectionClientManagerTest {
             LOG.error("current path = {}", sftpConnection.currentDirectory());
             assertTrue(sftpConnection.currentDirectory().length() > 0);
 
-            Thread.sleep(10);
+            await()
+                    .atLeast(10, TimeUnit.MILLISECONDS)
+                    .atMost(1, TimeUnit.SECONDS)
+                    .with()
+                    .pollDelay(10, TimeUnit.MILLISECONDS)
+                    .pollInterval(10, TimeUnit.MILLISECONDS)
+                    .until(isBorrowed(fieldIn(BasicClientConnectionManager.class).ofType(Map.class).andWithName("connections").call(), connectionBean, Thread.currentThread()));
             ISftpConnection sftpConnection1 = manager.borrowConnection(connectionBean, ISftpConnection.class);
             assertTrue(sftpConnection1.currentDirectory().length() > 0);
             assertSame(sftpConnection, sftpConnection1);
@@ -206,8 +224,17 @@ public class BasicConnectionClientManagerTest {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private Callable<Boolean> isBorrowed(Map connections, ConnectionBean connectionBean, Thread thread) {
+        return () -> {
+            Map<Thread, ConnectionManagerBean> connectionManagerBeanMap = (Map<Thread, ConnectionManagerBean>)connections.get(connectionBean);
+            ConnectionManagerBean connectionManagerBean = connectionManagerBeanMap.get(thread);
+            return !connectionManagerBean.isConnectionBorrowed();
+        };
+    }
+
     @Test
-    public void should_auto_shutdown_connections_when_connections_idle_timed_out() throws ConnectionException, InterruptedException {
+    public void should_auto_shutdown_connections_when_connections_idle_timed_out() throws Exception {
         IConnectionManager manager = BasicClientConnectionManager.builder()
                 .setBorrowTimeoutMS(1)
                 .setIdleTimeoutSecond(1)
@@ -219,8 +246,15 @@ public class BasicConnectionClientManagerTest {
             ISftpConnection sftpConnection = manager.borrowConnection(connectionBean, ISftpConnection.class);
             LOG.error("current path = {}", sftpConnection.currentDirectory());
             assertTrue(sftpConnection.currentDirectory().length() > 0);
-
-            Thread.sleep(100);
+            LOG.error("------------begin-----------{}", Calendar.getInstance().getTimeInMillis());
+            await()
+                    .atLeast(10, TimeUnit.MILLISECONDS)
+                    .atMost(1, TimeUnit.SECONDS)
+                    .with()
+                    .pollDelay(10, TimeUnit.MILLISECONDS)
+                    .pollInterval(10, TimeUnit.MILLISECONDS)
+                    .until(isShutdown(fieldIn(BasicClientConnectionManager.class).ofType(Map.class).andWithName("connections").call(), connectionBean, Thread.currentThread()));
+            LOG.error("------------end-----------{}", Calendar.getInstance().getTimeInMillis());
             ISftpConnection sftpConnection1 = manager.borrowConnection(connectionBean, ISftpConnection.class);
             assertTrue(sftpConnection1.currentDirectory().length() > 0);
             assertNotSame(sftpConnection, sftpConnection1);
@@ -234,5 +268,14 @@ public class BasicConnectionClientManagerTest {
                     .setAutoInspect(false)
                     .build();
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Callable<Boolean> isShutdown(Map connections, ConnectionBean connectionBean, Thread thread) {
+        return () -> {
+            Map<Thread, ConnectionManagerBean> connectionManagerBeanMap = (Map<Thread, ConnectionManagerBean>)connections.get(connectionBean);
+            LOG.error("========================={},{}", (connectionManagerBeanMap.get(thread) == null), thread.getName());
+            return connectionManagerBeanMap.get(thread) == null;
+        };
     }
 }
