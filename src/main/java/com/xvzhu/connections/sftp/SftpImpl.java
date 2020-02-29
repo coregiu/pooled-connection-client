@@ -32,10 +32,6 @@ import java.util.Properties;
  * @version V1.0
  * @since Date : 2020-02-15 15:42
  */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class SftpImpl implements ISftpConnection {
     private static final Logger LOG = LoggerFactory.getLogger(SftpImpl.class);
     private static final String SEPARATOR = "/";

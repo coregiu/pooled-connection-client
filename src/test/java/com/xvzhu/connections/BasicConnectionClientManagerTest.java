@@ -13,8 +13,6 @@ import com.xvzhu.connections.data.ConnectionBeanBuilder;
 import com.xvzhu.connections.mockserver.SftpServer;
 import com.xvzhu.connections.sftp.SftpConnectionFactory;
 import com.xvzhu.connections.sftp.SftpImplTest;
-import org.awaitility.Awaitility;
-import org.awaitility.Duration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -29,12 +27,8 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import static org.awaitility.Awaitility.await;
 import static org.awaitility.Awaitility.fieldIn;
-import static org.awaitility.Awaitility.with;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -67,10 +61,10 @@ public class BasicConnectionClientManagerTest {
     }
 
     @After
-    public void shutdownSftp() {
+    public void shutdownSftp() throws ConnectionException{
         LOG.error("Begin to shutdown server.");
         sftpServer.shutdown();
-        sftpConnection.getChannelSftp().disconnect();
+        sftpConnection.disconnect();
     }
 
     @Test
@@ -189,7 +183,7 @@ public class BasicConnectionClientManagerTest {
     }
 
     @Test
-    public void should_auto_release_connections_when_connections_borrow_timed_out() throws ConnectionException, Exception {
+    public void should_auto_release_connections_when_connections_borrow_timed_out() throws Exception {
         IConnectionManager manager = BasicClientConnectionManager.builder()
                 .setBorrowTimeoutMS(1)
                 .setIdleTimeoutSecond(100000)

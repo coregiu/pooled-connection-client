@@ -53,10 +53,10 @@ public class PooledInspectImplTest {
     }
 
     @After
-    public void shutdownSftp() {
+    public void shutdownSftp() throws ConnectionException{
         LOG.error("Begin to shutdown server.");
         sftpServer.shutdown();
-        sftpConnection.getChannelSftp().disconnect();
+        sftpConnection.disconnect();
     }
 
     @Test

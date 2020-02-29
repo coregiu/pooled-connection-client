@@ -19,13 +19,6 @@ import java.util.List;
  */
 public interface ISftpConnection extends IConnection{
     /**
-     * Gets channel sftp.
-     *
-     * @return the channel sftp
-     */
-    ChannelSftp getChannelSftp();
-
-    /**
      * Current directory string.
      *
      * @return the string
