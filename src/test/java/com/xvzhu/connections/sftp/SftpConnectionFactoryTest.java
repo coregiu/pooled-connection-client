@@ -22,8 +22,10 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.CountDownLatch;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test for sft connection factory.
@@ -55,6 +57,19 @@ public class SftpConnectionFactoryTest {
     public void shutdownSftp() {
         LOG.error("Begin to shutdown server.");
         sftpServer.shutdown();
+    }
+
+    @Test
+    public void should_initialization_when_build_by_constructor() {
+        SftpConnectionFactory build = new SftpConnectionFactory(connectionBean, 1000);
+        build.setConnectionBean(connectionBean);
+        build.setTimeoutMilliSecond(1000);
+        SftpConnectionFactory build2 = SftpConnectionFactory.builder().connectionBean(connectionBean).timeoutMilliSecond(1000).build();
+
+        assertTrue(build.canEqual(build2));
+        assertNotNull(build.toString());
+        assertEquals(build.hashCode(), build2.hashCode());
+        assertEquals(build, build2);
     }
 
     @Test

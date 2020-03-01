@@ -15,7 +15,6 @@ import static org.junit.Assert.*;
  * @since Date : 2020-02-22 12:05
  */
 public class ConnectionManagerConfigTest {
-
     @Test
     public void should_init_default_max_connection_size_value_when_default_created() {
         assertThat(ConnectionManagerConfig.builder().build().getMaxConnectionSize(), is(8));
@@ -49,5 +48,36 @@ public class ConnectionManagerConfigTest {
     @Test
     public void should_init_default_borrow_wait_time_value_when_default_created() {
         assertThat(ConnectionManagerConfig.builder().build().getBorrowMaxWaitTimeMS(), is(60000L));
+    }
+
+    @Test
+    public void should_equal_when_config_bean_has_same_value() {
+        ConnectionManagerConfig connectionManagerConfig = new ConnectionManagerConfig();
+        ConnectionManagerConfig connectionManagerConfig1 = ConnectionManagerConfig.builder().build();
+        assertTrue(connectionManagerConfig.canEqual(connectionManagerConfig1));
+        assertNotNull(connectionManagerConfig.toString());
+        assertEquals(connectionManagerConfig.hashCode(), connectionManagerConfig1.hashCode());
+        assertEquals(connectionManagerConfig, connectionManagerConfig1);
+    }
+
+    @Test
+    public void should_using_new_value_when_config_value_changed() {
+        ConnectionManagerConfig connectionManagerConfig = ConnectionManagerConfig.builder()
+                .maxConnectionSize(10)
+                .borrowMaxWaitTimeMS(10000)
+                .borrowTimeoutMS(5000)
+                .connectionTimeoutMs(3000)
+                .idleTimeoutMS(1800000)
+                .isAutoInspect(false)
+                .schedulePeriodTimeMS(12000L)
+                .build();
+        assertNotNull(connectionManagerConfig.toString());
+        assertThat(connectionManagerConfig.isAutoInspect(), is(false));
+        assertThat(connectionManagerConfig.getSchedulePeriodTimeMS(), is(12000L));
+        assertThat(connectionManagerConfig.getConnectionTimeoutMs(), is(3000));
+        assertThat(connectionManagerConfig.getBorrowTimeoutMS(), is(5000));
+        assertThat(connectionManagerConfig.getMaxConnectionSize(), is(10));
+        assertThat(connectionManagerConfig.getIdleTimeoutMS(), is(1800000));
+        assertThat(connectionManagerConfig.getBorrowMaxWaitTimeMS(), is(10000L));
     }
 }

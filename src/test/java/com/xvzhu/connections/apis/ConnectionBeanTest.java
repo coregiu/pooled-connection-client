@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -28,7 +29,12 @@ public class ConnectionBeanTest {
     @Test
     public void should_return_true_when_input_same_connection_info() {
         ConnectionBean beanFst = new ConnectionBean("192.168.0.1", 80, "test", "test");
-        ConnectionBean beanSnd = new ConnectionBean("192.168.0.1", 80, "test", "test");
+        ConnectionBean beanSnd = new ConnectionBean();
+        beanSnd.setHost("192.168.0.1");
+        beanSnd.setPort(80);
+        beanSnd.setUsername("test");
+        beanSnd.setPassword("test");
+        assertNotNull(beanFst.toString());
         assertThat(beanFst.hashCode() == beanSnd.hashCode(), is(true));
     }
 
