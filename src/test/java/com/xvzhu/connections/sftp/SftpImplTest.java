@@ -139,6 +139,18 @@ public class SftpImplTest {
     }
 
     @Test
+    public void should_throw_connection_exception_when_download_non_exists_dir() throws ConnectionException, IOException {
+        expectedException.expect(ConnectionException.class);
+        sftpConnection.download(sftpConnection.currentDirectory() + "/test/test", "test.txt");
+    }
+
+    @Test
+    public void should_throw_connection_exception_when_download_non_exists_file() throws ConnectionException, IOException {
+        expectedException.expect(ConnectionException.class);
+        sftpConnection.download(sftpConnection.currentDirectory(), "test.txt");
+    }
+
+    @Test
     public void should_return_true_when_file_exists() throws ConnectionException, IOException {
         byte[] input = "Go go go, fire in the hole".getBytes();
         InputStream inputStream = new BufferedInputStream(new ByteArrayInputStream(input));
@@ -167,6 +179,13 @@ public class SftpImplTest {
     }
 
     @Test
+    public void should_return_directly_when_delete_non_exists_file() throws ConnectionException, IOException {
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/test.txt"), is(false));
+        sftpConnection.deleteFile(sftpConnection.currentDirectory(), "test.txt");
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/test.txt"), is(false));
+    }
+
+    @Test
     public void should_successfully_when_delete_exists_directory() throws ConnectionException, IOException {
         String path = sftpConnection.currentDirectory() + "/test";
         sftpConnection.mkdirs(path);
@@ -177,7 +196,14 @@ public class SftpImplTest {
     }
 
     @Test
-    public void should_successfully_when_input_correct_name_to_change() throws ConnectionException{
+    public void should_return_directly_when_delete_non_exists_dir() throws ConnectionException, IOException {
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/test"), is(false));
+        sftpConnection.deleteDirectory(sftpConnection.currentDirectory() + "/test");
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/test"), is(false));
+    }
+
+    @Test
+    public void should_rename_successfully_when_input_correct_name_to_change() throws ConnectionException{
         String currentPath = sftpConnection.currentDirectory();
         String path = currentPath + "/test";
         sftpConnection.mkdirs(path);
@@ -191,7 +217,7 @@ public class SftpImplTest {
     }
 
     @Test
-    public void should_failed_when_input_wrong_name_to_change() throws ConnectionException{
+    public void should_failed_to_rename_when_input_wrong_name_to_change() throws ConnectionException{
         expectedException.expect(ConnectionException.class);
         expectedException.expectMessage("Failed to rename the file!");
         String currentPath = sftpConnection.currentDirectory();
@@ -205,8 +231,6 @@ public class SftpImplTest {
         byte[] input = "Go go go, fire in the hole".getBytes();
         InputStream inputStream = new BufferedInputStream(new ByteArrayInputStream(input));
         String path = sftpConnection.currentDirectory() + "/test";
-        sftpConnection.mkdirs(path);
-        assertThat(sftpConnection.isExist(path), is(true));
 
         sftpConnection.upload(path, "test.txt", inputStream);
         assertThat(sftpConnection.isFile(sftpConnection.currentDirectory() + "/test.txt"), is(true));
@@ -222,7 +246,12 @@ public class SftpImplTest {
         assertThat(sftpConnection.isExist(path), is(false));
     }
 
-
+    @Test
+    public void should_return_empty_collection_when_list_file_not_exists() throws ConnectionException {
+        assertThat(sftpConnection.isFile(sftpConnection.currentDirectory() + "/test.txt"), is(false));
+        List<String> files = sftpConnection.list(sftpConnection.currentDirectory()+"/test");
+        assertThat(files.size(), is(0));
+    }
 
     /**
      * convert input stream to byte array.
