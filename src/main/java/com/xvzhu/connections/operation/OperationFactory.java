@@ -142,7 +142,7 @@ public class OperationFactory {
     public void setConnection2Idle(@NonNull ConnectionManagerBean managerBean) {
         managerBean.setReleaseTime(Calendar.getInstance().getTimeInMillis());
         managerBean.setConnectionBorrowed(false);
-        LOG.warn("The connection of {} was set to idle", managerBean.hashCode());
+        LOG.info("The connection of {} was set to idle", managerBean.hashCode());
     }
 
     /**
@@ -167,7 +167,7 @@ public class OperationFactory {
                 LOG.error("Failed to disconnect", e);
             }
         }
-        LOG.warn("The connection of thread {} was removed", thread.getName());
+        LOG.info("The connection of thread {} was removed", thread.getName());
         hostConnectionMap.remove(thread);
     }
 
@@ -190,7 +190,7 @@ public class OperationFactory {
 
     private void batchReleaseAction(ConnectionBean connectionBean,
                                     Map<Thread, ConnectionManagerBean> hostConnectionMap) {
-        LOG.debug("begin to release all the connections of host: {}", connectionBean.getHost());
+        LOG.info("begin to release all the connections of host: {}", connectionBean.getHost());
         long timeNow = Calendar.getInstance().getTimeInMillis();
         // 1. Release timed out and closed connections. Contains reuse and close time out.
         Set<Map.Entry<Thread, ConnectionManagerBean>> releaseSet
@@ -199,7 +199,7 @@ public class OperationFactory {
                 .filter(entry -> entry.getValue().isConnectionBorrowed() &&
                         isTimedOut(timeNow, entry.getValue().getBorrowTime(), config.getBorrowTimeoutMS()))
                 .forEach(releaseSet::add);
-        LOG.warn("release size = {}", releaseSet.size());
+        LOG.info("release size = {}", releaseSet.size());
         releaseSet.forEach(entry -> setConnection2Idle(entry.getValue()));
 
         Set<Map.Entry<Thread, ConnectionManagerBean>> closeSet
@@ -208,7 +208,7 @@ public class OperationFactory {
                 .filter(entry -> (!entry.getValue().isConnectionBorrowed()) &&
                         isTimedOut(timeNow, entry.getValue().getReleaseTime(), config.getIdleTimeoutMS()))
                 .forEach(closeSet::add);
-        LOG.warn("shutdown size = {}", closeSet.size());
+        LOG.info("shutdown size = {}", closeSet.size());
         closeSet.forEach(entry -> shutdownConnection(entry.getKey(), hostConnectionMap));
 
         // 2. Release unused connection if connections is exceed the max size.
@@ -221,7 +221,7 @@ public class OperationFactory {
         hostConnectionMap.entrySet().stream()
                 .filter(entry -> (!entry.getValue().isConnectionBorrowed()))
                 .forEach(clearSet::add);
-        LOG.warn("shutdown by connection size check, size = {}", clearSet.size());
+        LOG.info("shutdown by connection size check, size = {}", clearSet.size());
         clearSet.forEach(entry -> shutdownConnection(entry.getKey(), hostConnectionMap));
     }
 

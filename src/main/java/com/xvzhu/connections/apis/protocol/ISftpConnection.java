@@ -4,7 +4,6 @@
 
 package com.xvzhu.connections.apis.protocol;
 
-import com.jcraft.jsch.ChannelSftp;
 import com.xvzhu.connections.apis.ConnectionException;
 
 import java.io.InputStream;

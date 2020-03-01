@@ -1,3 +1,10 @@
+[![Build Status](https://travis-ci.org/4admin2root/myhomework.svg?branch=master)](https://travis-ci.org/xvzhu/connection-client)
+[![Quality Gate](https://img.shields.io/badge/qualitygate-passing-brightgreen.svg)](https://sonarcloud.io/dashboard?id=xvzhu_connection-client)
+[![Codecov](https://img.shields.io/badge/Coverage-passing-brightgreen.svg)](https://sonarcloud.io/dashboard?id=xvzhu_connection-client)
+[![Language](https://img.shields.io/badge/language-java-brightgreen.svg)]()
+[![License](https://img.shields.io/badge/license-Apache2.0-brightgreen.svg)](LICENSE)
+
+
 # connection client
 Supply basic and pooled management of connections, such as sftp, snmp and so on.
 
