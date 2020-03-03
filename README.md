@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/4admin2root/myhomework.svg?branch=master)](https://travis-ci.org/xvzhu/connection-client)
 [![Quality Gate](https://img.shields.io/badge/qualitygate-passing-brightgreen.svg)](https://sonarcloud.io/dashboard?id=xvzhu_connection-client)
 [![codecov](https://codecov.io/gh/xvzhu/connection-client/branch/master/graph/badge.svg)](https://codecov.io/gh/xvzhu/connection-client)
-[![Language](https://img.shields.io/badge/language-java-blue.svg)]()
+[![Language](https://img.shields.io/badge/language-java-blue.svg)](README.md)
 [![License](https://img.shields.io/badge/license-Apache2.0-brightgreen.svg)](LICENSE)
 
 

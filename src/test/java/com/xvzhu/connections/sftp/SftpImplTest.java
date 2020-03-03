@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -61,6 +62,11 @@ public class SftpImplTest {
         LOG.error("Begin to shutdown server.");
         sftpServer.shutdown();
         sftpConnection.disconnect();
+    }
+
+    @Test
+    public void should_create_connection_when_with_correct_information() throws ConnectionException{
+        assertNotNull(sftpConnection.currentDirectory());
     }
 
     @Test
