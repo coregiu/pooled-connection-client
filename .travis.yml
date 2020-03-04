@@ -6,7 +6,7 @@ addons:
   sonarcloud:
     organization: "xvzhu"
     token:
-      secure: 473ed7b9025df36865072496fa27be97b9233a0d
+      secure: 41abd46b86cbe6d3765e3e42941a8d34200f9fd3
 
 jdk:
   - oraclejdk8
