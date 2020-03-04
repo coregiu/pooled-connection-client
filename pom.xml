@@ -27,7 +27,7 @@
         <sonar.projectKey>xvzhu_connection-client</sonar.projectKey>
         <sonar.organization>xvzhu</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-        <sonar.login>2f449868d823576b02ff7d2d1e8515af20ee8745</sonar.login>
+        <sonar.login>41abd46b86cbe6d3765e3e42941a8d34200f9fd3</sonar.login>
     </properties>
 
     <dependencies>
