@@ -8,6 +8,7 @@ import com.xvzhu.connections.apis.ConnectionConst;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.ConnectionManagerConfig;
+import com.xvzhu.connections.apis.IOperation;
 import com.xvzhu.connections.apis.protocol.IConnection;
 import com.xvzhu.connections.apis.ConnectionManagerBean;
 import lombok.NonNull;
@@ -32,7 +33,7 @@ import java.util.function.Consumer;
  * @version V1.0
  * @since Date : 2020-02-16 16:01
  */
-public class OperationFactory {
+public class OperationFactory implements IOperation {
     private static final Logger LOG = LoggerFactory.getLogger(OperationFactory.class);
 
     private static final Object LOCK = new Object();
@@ -58,6 +59,7 @@ public class OperationFactory {
      * @return the t
      * @throws ConnectionException the connection exception
      */
+    @Override
     @SuppressWarnings("unchecked")
     public <T extends IConnection> T createConnection(ConnectionBean connectionBean,
                                                       ConnectionManagerConfig connectionManagerConfig,
@@ -93,6 +95,7 @@ public class OperationFactory {
      * @return the t
      * @throws ConnectionException the connection exception
      */
+    @Override
     @SuppressWarnings("unchecked")
     public <T extends BasePooledObjectFactory> T createConnectionFactory(ConnectionBean connectionBean,
                                                                          ConnectionManagerConfig connectionManagerConfig,
@@ -121,6 +124,7 @@ public class OperationFactory {
      *
      * @return the release consumer
      */
+    @Override
     public Consumer<Map.Entry<ConnectionBean, Map<Thread, ConnectionManagerBean>>> getReleaseConsumer() {
         return entry -> releaseConnection(entry.getKey(), entry.getValue());
     }
@@ -130,6 +134,7 @@ public class OperationFactory {
      *
      * @return the release biConsumer
      */
+    @Override
     public BiConsumer<ConnectionBean, Map<Thread, ConnectionManagerBean>> getReleaseBiConsumer() {
         return this::releaseConnection;
     }
@@ -139,6 +144,7 @@ public class OperationFactory {
      *
      * @param managerBean the manager bean
      */
+    @Override
     public void setConnection2Idle(@NonNull ConnectionManagerBean managerBean) {
         managerBean.setReleaseTime(Calendar.getInstance().getTimeInMillis());
         managerBean.setConnectionBorrowed(false);
@@ -151,6 +157,7 @@ public class OperationFactory {
      * @param thread            the thread
      * @param hostConnectionMap the host connection map
      */
+    @Override
     public void shutdownConnection(@NonNull Thread thread,
                                    @NonNull Map<Thread, ConnectionManagerBean> hostConnectionMap) {
         ConnectionManagerBean managerBean = hostConnectionMap.get(thread);

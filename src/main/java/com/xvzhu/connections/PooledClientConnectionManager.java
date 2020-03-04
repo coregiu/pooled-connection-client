@@ -8,6 +8,7 @@ import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.ConnectionManagerBean;
 import com.xvzhu.connections.apis.ConnectionManagerConfig;
+import com.xvzhu.connections.apis.IOperation;
 import com.xvzhu.connections.apis.protocol.IConnection;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.IConnectionMonitor;
@@ -36,7 +37,7 @@ public class PooledClientConnectionManager implements IConnectionManager {
 
     private static ConnectionManagerConfig connectionManagerConfig = ConnectionManagerConfig.builder().build();
 
-    private static OperationFactory operationFactory = new OperationFactory(connectionManagerConfig);
+    private static IOperation operationFactory = new OperationFactory(connectionManagerConfig);
 
     private static IConnectionMonitor connectionMonitor = ConnectionMonitor.getInstance();
 
