@@ -32,9 +32,16 @@ public interface IConnection {
     void disconnect() throws ConnectionException;
 
     /**
-     * Is valid boolean.
+     * Is connection valid.
      *
      * @return the boolean
      */
     boolean isValid();
+
+    /**
+     * Was connection closed.
+     *
+     * @return the boolean
+     */
+    boolean isClosed();
 }

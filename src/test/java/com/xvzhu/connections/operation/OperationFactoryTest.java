@@ -5,7 +5,6 @@
 package com.xvzhu.connections.operation;
 
 import com.jcraft.jsch.ChannelSftp;
-import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionConst;
@@ -13,6 +12,7 @@ import com.xvzhu.connections.apis.ConnectionManagerConfig;
 import com.xvzhu.connections.apis.ConnectionManagerBean;
 import com.xvzhu.connections.sftp.SftpImpl;
 import mockit.Capturing;
+import mockit.Expectations;
 import mockit.Mocked;
 import org.junit.Test;
 import java.util.Calendar;
@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -60,7 +62,7 @@ public class OperationFactoryTest {
         managerBeanMap.put(Thread.currentThread(), managerBean);
         connections.put(connectionBean, managerBeanMap);
 
-        connections.entrySet().stream().forEach(operationFactory.getReleaseConsumer());
+        connections.entrySet().forEach(operationFactory.getReleaseConsumer());
         assertThat(managerBean.isConnectionBorrowed(), is(false));
         long releaseInterval = (managerBean.getReleaseTime() - timeNow) / 1000;
         assertThat(releaseInterval >= 0 && releaseInterval < 3, is(true));
@@ -80,12 +82,18 @@ public class OperationFactoryTest {
         managerBeanMap.put(Thread.currentThread(), managerBean);
         connections.put(connectionBean, managerBeanMap);
 
-        connections.entrySet().stream().forEach(operationFactory.getReleaseConsumer());
+        connections.entrySet().forEach(operationFactory.getReleaseConsumer());
         assertThat(managerBean.isConnectionBorrowed(), is(true));
     }
 
     @Test
-    public void should_close_current_basic_connections_when_basic_connection_close_time_out() throws JSchException {
+    public void should_close_current_basic_connections_when_basic_connection_close_time_out() {
+        new Expectations() {
+            {
+                sftpConnection.isClosed();
+                result = true;
+            }
+        };
         Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
 
         long timeNow = Calendar.getInstance().getTimeInMillis();
@@ -100,8 +108,53 @@ public class OperationFactoryTest {
         managerBeanMap.put(Thread.currentThread(), managerBean);
         connections.put(connectionBean, managerBeanMap);
 
-        connections.entrySet().stream().forEach(operationFactory.getReleaseConsumer());
+        connections.entrySet().forEach(operationFactory.getReleaseConsumer());
         assertThat(managerBeanMap.get(Thread.currentThread()) == null, is(true));
+    }
+
+    @Test
+    public void should_not_close_current_basic_connections_when_basic_connection_close_time_not_out_but_not_closed() {
+        new Expectations() {
+            {
+                sftpConnection.isClosed();
+                result = false;
+            }
+        };
+        Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
+
+        long timeNow = Calendar.getInstance().getTimeInMillis();
+        ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "test", "test");
+        Map<Thread, ConnectionManagerBean> managerBeanMap = new HashMap<>();
+        ConnectionManagerBean managerBean =
+                ConnectionManagerBean.builder()
+                        .isConnectionBorrowed(false)
+                        .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() - 10000)
+                        .connectionClient(sftpConnection)
+                        .build();
+        managerBeanMap.put(Thread.currentThread(), managerBean);
+        connections.put(connectionBean, managerBeanMap);
+
+        connections.entrySet().forEach(operationFactory.getReleaseConsumer());
+        assertNotNull(managerBeanMap.get(Thread.currentThread()));
+    }
+
+    @Test
+    public void should_close_current_basic_connections_when_connection_is_null() {
+        Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
+
+        long timeNow = Calendar.getInstance().getTimeInMillis();
+        ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "test", "test");
+        Map<Thread, ConnectionManagerBean> managerBeanMap = new HashMap<>();
+        ConnectionManagerBean managerBean =
+                ConnectionManagerBean.builder()
+                        .isConnectionBorrowed(false)
+                        .releaseTime(timeNow - connectionManagerConfig.getIdleTimeoutMS() - 10000)
+                        .build();
+        managerBeanMap.put(Thread.currentThread(), managerBean);
+        connections.put(connectionBean, managerBeanMap);
+
+        connections.entrySet().forEach(operationFactory.getReleaseConsumer());
+        assertNull(managerBeanMap.get(Thread.currentThread()));
     }
 
     @Test
@@ -119,7 +172,7 @@ public class OperationFactoryTest {
         managerBeanMap.put(Thread.currentThread(), managerBean);
         connections.put(connectionBean, managerBeanMap);
 
-        connections.entrySet().stream().forEach(operationFactory.getReleaseConsumer());
+        connections.entrySet().forEach(operationFactory.getReleaseConsumer());
         assertThat(managerBeanMap.get(Thread.currentThread()) != null, is(true));
     }
 
@@ -159,7 +212,7 @@ public class OperationFactoryTest {
 
         Thread.currentThread().setName(ConnectionConst.SCHEDULE_THREAD_NAME);
 
-        connections.entrySet().stream().forEach(operationFactory.getReleaseConsumer());
+        connections.entrySet().forEach(operationFactory.getReleaseConsumer());
         assertThat(managerBean.isConnectionBorrowed(), is(false));
         assertThat(managerBean1.isConnectionBorrowed(), is(false));
         assertThat(managerBean2.isConnectionBorrowed(), is(true));
@@ -168,7 +221,13 @@ public class OperationFactoryTest {
     }
 
     @Test
-    public void should_close_all_basic_connections_when_basic_connection_close_time_out() throws JSchException{
+    public void should_close_all_basic_connections_when_basic_connection_close_time_out() {
+        new Expectations() {
+            {
+                sftpConnection.isClosed();
+                result = true;
+            }
+        };
         Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
         ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "test", "test");
@@ -205,14 +264,21 @@ public class OperationFactoryTest {
 
         Thread.currentThread().setName(ConnectionConst.SCHEDULE_THREAD_NAME);
 
-        connections.entrySet().stream().forEach(operationFactory.getReleaseConsumer());
+        connections.entrySet().forEach(operationFactory.getReleaseConsumer());
         assertThat(managerBeanMap.get(Thread.currentThread()) == null, is(true));
         assertThat(managerBeanMap1.get(Thread.currentThread()) == null, is(true));
         assertThat(managerBeanMap2.get(Thread.currentThread()) != null, is(true));
     }
 
     @Test
-    public void should_close_all_basic_connections_when_basic_connections_exceed_max_limit() throws JSchException{
+    public void should_close_all_basic_connections_when_basic_connections_exceed_max_limit() {
+        new Expectations() {
+            {
+                sftpConnection.isClosed();
+                result = true;
+            }
+        };
+
         Map<ConnectionBean, Map<Thread, ConnectionManagerBean>> connections = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
         ConnectionBean connectionBean = new ConnectionBean("192.168.1.1", 22, "test", "test");
@@ -240,7 +306,7 @@ public class OperationFactoryTest {
 
         Thread.currentThread().setName(ConnectionConst.SCHEDULE_THREAD_NAME);
 
-        connections.entrySet().stream().forEach(operationFactory.getReleaseConsumer());
+        connections.entrySet().forEach(operationFactory.getReleaseConsumer());
         assertThat(managerBeanMap.size(), is(2));
         assertThat(managerBeanMap.get(Thread.currentThread()) == null, is(true));
     }

@@ -173,9 +173,13 @@ public class OperationFactory implements IOperation {
             } catch (ConnectionException e) {
                 LOG.error("Failed to disconnect", e);
             }
+            LOG.info("The connection of thread {} was removed", thread.getName());
+            if (connection.isClosed()) {
+                hostConnectionMap.remove(thread);
+            }
+        } else {
+            hostConnectionMap.remove(thread);
         }
-        LOG.info("The connection of thread {} was removed", thread.getName());
-        hostConnectionMap.remove(thread);
     }
 
     private void releaseConnection(ConnectionBean connectionBean,

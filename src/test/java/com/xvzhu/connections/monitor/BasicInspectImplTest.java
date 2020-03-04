@@ -12,6 +12,7 @@ import com.xvzhu.connections.apis.protocol.ISftpConnection;
 import com.xvzhu.connections.apis.ConnectionManagerBean;
 import com.xvzhu.connections.data.ConnectionBeanBuilder;
 import mockit.Capturing;
+import mockit.Expectations;
 import org.junit.Test;
 
 import java.util.Calendar;
@@ -68,6 +69,12 @@ public class BasicInspectImplTest {
 
     @Test
     public void should_shutdown_connection_to_manager_when_idle_timed_out() {
+        new Expectations() {
+            {
+                sftpConnection.isClosed();
+                result = true;
+            }
+        };
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().build().getConnectionBean();
         Map<Thread, ConnectionManagerBean> managerMap = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
@@ -134,6 +141,12 @@ public class BasicInspectImplTest {
 
     @Test
     public void should_shutdown_all_connection_to_manager_when_idle_timed_out() {
+        new Expectations() {
+            {
+                sftpConnection.isClosed();
+                result = true;
+            }
+        };
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().host("192.168.0.1").build().getConnectionBean();
         Map<Thread, ConnectionManagerBean> managerMap = new HashMap<>();
         long timeNow = Calendar.getInstance().getTimeInMillis();
@@ -175,6 +188,12 @@ public class BasicInspectImplTest {
 
     @Test
     public void should_shutdown_all_connection_to_manager_when_connections_more_than_limited_size() {
+        new Expectations() {
+            {
+                sftpConnection.isClosed();
+                result = true;
+            }
+        };
         BasicClientConnectionManager.builder().setMaxConnectionSize(3);
         ConnectionBean connectionBean = ConnectionBeanBuilder.builder().host("192.168.0.1").build().getConnectionBean();
         Map<Thread, ConnectionManagerBean> managerMap = new HashMap<>();

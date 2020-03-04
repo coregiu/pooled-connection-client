@@ -13,10 +13,7 @@ import com.jcraft.jsch.SftpException;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.protocol.ISftpConnection;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +32,9 @@ import java.util.Properties;
 public class SftpImpl implements ISftpConnection {
     private static final Logger LOG = LoggerFactory.getLogger(SftpImpl.class);
     private static final String SEPARATOR = "/";
+    /**
+     * The constant DIRECTORY_NOT_EXISTS.
+     */
     public static final String DIRECTORY_NOT_EXISTS = "Directory not exists!";
     private static Properties sshConfig = new Properties();
     private static final String CHANNEL_TYPE = "sftp";
@@ -299,7 +299,6 @@ public class SftpImpl implements ISftpConnection {
 
     /**
      * Disconnect.
-     *
      */
     @Override
     public void disconnect() {
@@ -314,12 +313,22 @@ public class SftpImpl implements ISftpConnection {
     }
 
     /**
-     * Is valid boolean.
+     * Is connection valid.
      *
      * @return the boolean
      */
     @Override
     public boolean isValid() {
-        return channelSftp != null && !channelSftp.isClosed();
+        return channelSftp != null && channelSftp.isConnected();
+    }
+
+    /**
+     * Was connection closed.
+     *
+     * @return the boolean
+     */
+    @Override
+    public boolean isClosed() {
+        return channelSftp != null && channelSftp.isClosed();
     }
 }
