@@ -14,7 +14,7 @@ jdk:
 script:
   # JaCoCo is used to have code coverage, the agent has to be activated
   - mvn clean install
-  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar
+  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent install sonar:sonar -Dsonar.projectKey=xvzhu_connection-client
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
