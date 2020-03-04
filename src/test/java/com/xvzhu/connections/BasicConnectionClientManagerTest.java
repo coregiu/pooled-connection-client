@@ -20,9 +20,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.Calendar;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -120,7 +118,7 @@ public class BasicConnectionClientManagerTest {
     }
 
     @Test
-    public void should_not_borrow_when_the_connection_was_borrowed() throws ConnectionException {
+    public void should_borrow_again_when_the_connection_was_borrowed() throws ConnectionException {
         IConnectionManager manager = BasicClientConnectionManager.builder()
                 .setAutoInspect(false)
                 .build();
@@ -130,11 +128,10 @@ public class BasicConnectionClientManagerTest {
             LOG.error("current path = {}", sftpConnection.currentDirectory());
             assertTrue(sftpConnection.currentDirectory().length() > 0);
 
-            expectedException.expect(ConnectionException.class);
-            expectedException.expectMessage(String.format(Locale.ENGLISH,
-                    "The host : %s, thread :%s's connection has been borrowed!",
-                    connectionBean.getHost(), Thread.currentThread().getName()));
-            manager.borrowConnection(connectionBean, ISftpConnection.class);
+            manager.releaseConnection(connectionBean);
+
+            ISftpConnection sftpConnection1 = manager.borrowConnection(connectionBean, ISftpConnection.class);
+            assertSame(sftpConnection, sftpConnection1);
         } finally {
             manager.releaseConnection(connectionBean);
             manager.closeConnection(connectionBean);
@@ -142,7 +139,45 @@ public class BasicConnectionClientManagerTest {
     }
 
     @Test
-    public void should_borrow_when_the_connection_was_idle() throws ConnectionException {
+    public void should_borrow_same_connection_when_other_thread_connection_was_idle() throws Exception {
+        IConnectionManager manager = BasicClientConnectionManager.builder()
+                .setAutoInspect(false)
+                .build();
+        ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        final ISftpConnection[] sftpConnection = new ISftpConnection[1];
+        try {
+            Thread thread = new Thread(() -> {
+                try {
+                    sftpConnection[0] = manager.borrowConnection(connectionBean, ISftpConnection.class);
+                    manager.releaseConnection(connectionBean);
+                } catch (ConnectionException e) {
+                    LOG.error("Failed to borrow the first connection.");
+                } finally {
+                    countDownLatch.countDown();
+                }
+            });
+            thread.start();
+            countDownLatch.await();
+            ISftpConnection sftpConnection1 = manager.borrowConnection(connectionBean, ISftpConnection.class);
+
+            await()
+                    .atLeast(10, TimeUnit.MILLISECONDS)
+                    .atMost(1, TimeUnit.SECONDS)
+                    .with()
+                    .pollDelay(10, TimeUnit.MILLISECONDS)
+                    .pollInterval(10, TimeUnit.MILLISECONDS)
+                    .until(isShutdown(fieldIn(BasicClientConnectionManager.class).ofType(Map.class).andWithName("connections").call(), connectionBean, thread));
+
+            assertSame(sftpConnection[0], sftpConnection1);
+        } finally {
+            manager.releaseConnection(connectionBean);
+            manager.closeConnection(connectionBean);
+        }
+    }
+
+    @Test
+    public void should_borrow_same_connection_when_the_connection_was_idle() throws ConnectionException {
         IConnectionManager manager = BasicClientConnectionManager.builder()
                 .setAutoInspect(false)
                 .build();
@@ -162,7 +197,7 @@ public class BasicConnectionClientManagerTest {
     }
 
     @Test
-    public void should_borrow_when_the_connection_was_shutdown() throws ConnectionException {
+    public void should_borrow_new_connection_when_the_connection_was_shutdown() throws ConnectionException {
         IConnectionManager manager = BasicClientConnectionManager.builder()
                 .setAutoInspect(false)
                 .build();

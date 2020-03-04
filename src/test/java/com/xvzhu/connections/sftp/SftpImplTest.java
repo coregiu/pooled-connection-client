@@ -186,9 +186,9 @@ public class SftpImplTest {
 
     @Test
     public void should_return_directly_when_delete_non_exists_file() throws ConnectionException, IOException {
-        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/test.txt"), is(false));
-        sftpConnection.deleteFile(sftpConnection.currentDirectory(), "test.txt");
-        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/test.txt"), is(false));
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/test/test.txt"), is(false));
+        sftpConnection.deleteFile(sftpConnection.currentDirectory() + "/test", "test.txt");
+        assertThat(sftpConnection.isExist(sftpConnection.currentDirectory() + "/test/test.txt"), is(false));
     }
 
     @Test

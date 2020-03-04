@@ -197,7 +197,6 @@ public class OperationFactory implements IOperation {
             if (hostConnectionMap == null || hostConnectionMap.get(Thread.currentThread()) == null) {
                 return;
             }
-            ConnectionManagerBean managerBean = hostConnectionMap.get(Thread.currentThread());
             singleReleaseAction(hostConnectionMap);
         }
     }

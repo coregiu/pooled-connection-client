@@ -4,9 +4,9 @@ language: java
 
 addons:
   sonarcloud:
-    organization: "xvzhu"
+    organization: ${SONAR_ORG}
     token:
-      secure: 41abd46b86cbe6d3765e3e42941a8d34200f9fd3
+      secure: ${SONAR_TOKEN}
 
 jdk:
   - oraclejdk8
