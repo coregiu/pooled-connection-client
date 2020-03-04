@@ -35,7 +35,6 @@ import java.util.function.Consumer;
  */
 public class BasicClientConnectionManager implements IConnectionManager {
     private static final Logger LOG = LoggerFactory.getLogger(BasicClientConnectionManager.class);
-    private static final Object LOCK = new Object();
     private static final int DEFAULT_MAX_CONNECTION_SIZE = 8;
 
     /**
@@ -140,12 +139,10 @@ public class BasicClientConnectionManager implements IConnectionManager {
                     Thread.currentThread().getName());
             return;
         }
-        synchronized (managerBean.getLock()) {
-            if (isShutdown) {
-                operationFactory.shutdownConnection(Thread.currentThread(), threadManagerBeanMap);
-            } else {
-                operationFactory.setConnection2Idle(managerBean);
-            }
+        if (isShutdown) {
+            operationFactory.shutdownConnection(Thread.currentThread(), threadManagerBeanMap);
+        } else {
+            operationFactory.setConnection2Idle(managerBean);
         }
     }
 
@@ -190,21 +187,20 @@ public class BasicClientConnectionManager implements IConnectionManager {
 
     private <T extends IConnection> T getAndRegisterNewConnection(ConnectionBean connectionBean, Class<T> clazz)
             throws ConnectionException {
+        // Each thread has a connection, no need to synchronize.
         ConnectionManagerBean managerBean;
-        synchronized (LOCK) {
-            T connection = operationFactory.createConnection(connectionBean, connectionManagerConfig, clazz);
+        T connection = operationFactory.createConnection(connectionBean, connectionManagerConfig, clazz);
 
-            managerBean = ConnectionManagerBean.builder()
-                    .isConnectionBorrowed(true)
-                    .connectionClient(connection)
-                    .build();
-            Map<Thread, ConnectionManagerBean> managerBeanThreadLocal = new ConcurrentHashMap<>(DEFAULT_MAX_CONNECTION_SIZE);
-            managerBeanThreadLocal.put(Thread.currentThread(), managerBean);
-            connections.put(connectionBean, managerBeanThreadLocal);
-            LOG.debug("New a connection for host {}, thread {}",
-                    connectionBean.getHost(), Thread.currentThread().getName());
-            return connection;
-        }
+        managerBean = ConnectionManagerBean.builder()
+                .isConnectionBorrowed(true)
+                .connectionClient(connection)
+                .build();
+        Map<Thread, ConnectionManagerBean> managerBeanThreadLocal = new ConcurrentHashMap<>(DEFAULT_MAX_CONNECTION_SIZE);
+        managerBeanThreadLocal.put(Thread.currentThread(), managerBean);
+        connections.put(connectionBean, managerBeanThreadLocal);
+        LOG.debug("New a connection for host {}, thread {}",
+                connectionBean.getHost(), Thread.currentThread().getName());
+        return connection;
     }
 
     /**

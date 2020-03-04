@@ -36,8 +36,6 @@ import java.util.function.Consumer;
 public class OperationFactory implements IOperation {
     private static final Logger LOG = LoggerFactory.getLogger(OperationFactory.class);
 
-    private static final Object LOCK = new Object();
-
     private ConnectionManagerConfig config;
 
     /**
@@ -146,9 +144,11 @@ public class OperationFactory implements IOperation {
      */
     @Override
     public void setConnection2Idle(@NonNull ConnectionManagerBean managerBean) {
-        managerBean.setReleaseTime(Calendar.getInstance().getTimeInMillis());
-        managerBean.setConnectionBorrowed(false);
-        LOG.info("The connection of {} was set to idle", managerBean.hashCode());
+        synchronized (managerBean.getLock()) {
+            managerBean.setReleaseTime(Calendar.getInstance().getTimeInMillis());
+            managerBean.setConnectionBorrowed(false);
+            LOG.info("The connection of {} was set to idle", managerBean.hashCode());
+        }
     }
 
     /**
@@ -161,41 +161,44 @@ public class OperationFactory implements IOperation {
     public void shutdownConnection(@NonNull Thread thread,
                                    @NonNull Map<Thread, ConnectionManagerBean> hostConnectionMap) {
         ConnectionManagerBean managerBean = hostConnectionMap.get(thread);
-        // double check.
         if (managerBean == null) {
             LOG.info("Then thread {} 's connection has been closed!", thread);
             return;
         }
-        IConnection connection = managerBean.getConnectionClient();
-        if (null != connection) {
-            try {
-                connection.disconnect();
-            } catch (ConnectionException e) {
-                LOG.error("Failed to disconnect", e);
+        synchronized (managerBean.getLock()) {
+            // double check.
+            managerBean = hostConnectionMap.get(thread);
+            if (managerBean == null) {
+                LOG.info("Then thread {} 's connection has been closed!", thread);
+                return;
             }
-            LOG.info("The connection of thread {} was removed", thread.getName());
-            if (connection.isClosed()) {
+            IConnection connection = managerBean.getConnectionClient();
+            if (null != connection) {
+                try {
+                    connection.disconnect();
+                } catch (ConnectionException e) {
+                    LOG.error("Failed to disconnect", e);
+                }
+                LOG.info("The connection of thread {} was removed", thread.getName());
+                if (connection.isClosed()) {
+                    hostConnectionMap.remove(thread);
+                }
+            } else {
                 hostConnectionMap.remove(thread);
             }
-        } else {
-            hostConnectionMap.remove(thread);
         }
     }
 
     private void releaseConnection(ConnectionBean connectionBean,
                                    Map<Thread, ConnectionManagerBean> hostConnectionMap) {
         if (Thread.currentThread().getName().equals(ConnectionConst.SCHEDULE_THREAD_NAME)) {
-            synchronized (LOCK) {
-                batchReleaseAction(connectionBean, hostConnectionMap);
-            }
+            batchReleaseAction(connectionBean, hostConnectionMap);
         } else {
             if (hostConnectionMap == null || hostConnectionMap.get(Thread.currentThread()) == null) {
                 return;
             }
             ConnectionManagerBean managerBean = hostConnectionMap.get(Thread.currentThread());
-            synchronized (managerBean.getLock()) {
-                singleReleaseAction(hostConnectionMap);
-            }
+            singleReleaseAction(hostConnectionMap);
         }
     }
 
