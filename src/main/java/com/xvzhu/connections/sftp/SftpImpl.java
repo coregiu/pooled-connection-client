@@ -35,7 +35,7 @@ public class SftpImpl implements ISftpConnection {
     /**
      * The constant DIRECTORY_NOT_EXISTS.
      */
-    public static final String DIRECTORY_NOT_EXISTS = "Directory not exists!";
+    private static final String DIRECTORY_NOT_EXISTS = "Directory not exists!";
     private static Properties sshConfig = new Properties();
     private static final String CHANNEL_TYPE = "sftp";
     private ChannelSftp channelSftp;
@@ -44,6 +44,16 @@ public class SftpImpl implements ISftpConnection {
 
     static {
         sshConfig.put("StrictHostKeyChecking", "no");
+    }
+
+    /**
+     * Gets channel sftp.
+     *
+     * @return the channel sftp
+     */
+    @Override
+    public ChannelSftp getChannelSftp() {
+        return channelSftp;
     }
 
     /**

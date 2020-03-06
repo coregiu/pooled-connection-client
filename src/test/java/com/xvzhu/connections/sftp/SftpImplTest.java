@@ -27,8 +27,10 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author : xvzhu
@@ -66,6 +68,7 @@ public class SftpImplTest {
 
     @Test
     public void should_create_connection_when_with_correct_information() throws ConnectionException{
+        assertNotNull(sftpConnection.getChannelSftp());
         assertNotNull(sftpConnection.currentDirectory());
     }
 
@@ -257,6 +260,15 @@ public class SftpImplTest {
         assertThat(sftpConnection.isFile(sftpConnection.currentDirectory() + "/test.txt"), is(false));
         List<String> files = sftpConnection.list(sftpConnection.currentDirectory()+"/test");
         assertThat(files.size(), is(0));
+    }
+
+    @Test
+    public void should_return_closed_status_when_connection_was_closed() throws ConnectionException {
+        assertTrue(sftpConnection.isValid());
+        assertFalse(sftpConnection.isClosed());
+        sftpConnection.disconnect();
+        assertFalse(sftpConnection.isValid());
+        assertTrue(sftpConnection.isClosed());
     }
 
     /**

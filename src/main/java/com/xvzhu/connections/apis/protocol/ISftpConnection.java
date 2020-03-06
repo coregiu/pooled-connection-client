@@ -4,6 +4,7 @@
 
 package com.xvzhu.connections.apis.protocol;
 
+import com.jcraft.jsch.ChannelSftp;
 import com.xvzhu.connections.apis.ConnectionException;
 
 import java.io.InputStream;
@@ -17,6 +18,13 @@ import java.util.List;
  * @since Date : 2020-02-15 15:34
  */
 public interface ISftpConnection extends IConnection{
+    /**
+     * Gets channel sftp.
+     *
+     * @return the channel sftp
+     */
+    ChannelSftp getChannelSftp();
+
     /**
      * Current directory string.
      *
