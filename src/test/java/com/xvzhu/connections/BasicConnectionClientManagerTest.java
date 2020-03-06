@@ -162,7 +162,6 @@ public class BasicConnectionClientManagerTest {
             ISftpConnection sftpConnection1 = manager.borrowConnection(connectionBean, ISftpConnection.class);
 
             await()
-                    .atLeast(10, TimeUnit.MILLISECONDS)
                     .atMost(1, TimeUnit.SECONDS)
                     .with()
                     .pollDelay(10, TimeUnit.MILLISECONDS)
@@ -232,7 +231,6 @@ public class BasicConnectionClientManagerTest {
             assertTrue(sftpConnection.currentDirectory().length() > 0);
 
             await()
-                    .atLeast(10, TimeUnit.MILLISECONDS)
                     .atMost(1, TimeUnit.SECONDS)
                     .with()
                     .pollDelay(10, TimeUnit.MILLISECONDS)
@@ -277,7 +275,6 @@ public class BasicConnectionClientManagerTest {
             assertTrue(sftpConnection.currentDirectory().length() > 0);
             LOG.error("------------begin-----------{}", Calendar.getInstance().getTimeInMillis());
             await()
-                    .atLeast(10, TimeUnit.MILLISECONDS)
                     .atMost(1, TimeUnit.SECONDS)
                     .with()
                     .pollDelay(10, TimeUnit.MILLISECONDS)

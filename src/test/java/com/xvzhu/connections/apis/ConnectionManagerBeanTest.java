@@ -39,9 +39,10 @@ public class ConnectionManagerBeanTest {
         connectionManagerBean.setLock(object);
         connectionManagerBean.setConnectionClient(sftpConnection);
         connectionManagerBean.setConnectionPool(null);
+        connectionManagerBean.setBorrowTime(0L);
 
 
-        ConnectionManagerBean connectionManagerBean1 = ConnectionManagerBean.builder().lock(object).connectionClient(sftpConnection).build();
+        ConnectionManagerBean connectionManagerBean1 = ConnectionManagerBean.builder().lock(object).connectionClient(sftpConnection).borrowTime(0L).connectionPool(null).build();
         assertNotNull(connectionManagerBean.toString());
         assertTrue(connectionManagerBean.canEqual(connectionManagerBean1));
         assertTrue(connectionManagerBean.equals(connectionManagerBean1));

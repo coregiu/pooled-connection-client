@@ -80,31 +80,72 @@ public class BasicClientConnectionManager implements IConnectionManager {
     public <T extends IConnection> T borrowConnection(ConnectionBean connectionBean, Class<T> clazz)
             throws ConnectionException {
         connectionMonitor.notifyObservers(this, connectionBean, connections);
+
         Map<Thread, ConnectionManagerBean> threadManagerBeanMap = connections.get(connectionBean);
+        BorrowStatus borrowStatus = BorrowStatus.INIT;
+        while (borrowStatus != BorrowStatus.FINAL) {
+            switch (borrowStatus) {
+                case INIT:
+                    borrowStatus = getBorrowStatus(connectionBean, threadManagerBeanMap);
+                    break;
+                case NO_CONNECTION:
+                    borrowStatus = BorrowStatus.NEED_NEW_CONNECTION;
+                    break;
+                case THREAD_HAS_NO_CONNECTION:
+                    borrowStatus = BorrowStatus.OTHER_THREAD_HAS_CONNECTION;
+                    break;
+                case THREAD_HAS_CONNECTION:
+                    ConnectionManagerBean managerBean = threadManagerBeanMap.get(Thread.currentThread());
+                    Optional<T> connection = reuseConnection(connectionBean, managerBean);
+                    if (connection.isPresent()) {
+                        return connection.get();
+                    } else {
+                        borrowStatus = BorrowStatus.OTHER_THREAD_HAS_CONNECTION;
+                        break;
+                    }
+                case OTHER_THREAD_HAS_CONNECTION:
+                    Optional<T> connectionOption = borrowFromOtherThread(connectionBean);
+                    if (connectionOption.isPresent()) {
+                        return connectionOption.get();
+                    } else {
+                        borrowStatus = BorrowStatus.NEED_NEW_CONNECTION;
+                        break;
+                    }
+                case NEED_NEW_CONNECTION:
+                    if (threadManagerBeanMap != null &&
+                            threadManagerBeanMap.size() >= connectionManagerConfig.getMaxConnectionSize()) {
+                        borrowStatus = BorrowStatus.OVER_LIMIT;
+                        break;
+                    }
+
+                    return getAndRegisterNewConnection(connectionBean, clazz);
+                case OVER_LIMIT:
+                    LOG.error("The host:{}, thread:{}' connection is {}, more than the limit:{}.",
+                            connectionBean.getHost(), Thread.currentThread(),
+                            threadManagerBeanMap.size(), connectionManagerConfig.getMaxConnectionSize());
+                    throw new ConnectionException("Failed to borrow connection because of to much connections.");
+                default:
+                    throw new ConnectionException("Failed to borrow connection for FINAL status.");
+            }
+        }
+        throw new ConnectionException("Failed to borrow connection for FINAL status.");
+    }
+
+    private BorrowStatus getBorrowStatus(ConnectionBean connectionBean, Map<Thread, ConnectionManagerBean> threadManagerBeanMap) {
+        BorrowStatus borrowStatus;
         if (null == threadManagerBeanMap) {
+            LOG.info("Then host {} 's do not has any connections!",
+                    connectionBean.getHost());
+            borrowStatus = BorrowStatus.NO_CONNECTION;
+        } else if (null == threadManagerBeanMap.get(Thread.currentThread())) {
             LOG.info("Then host {}, thread {} 's do not has any connections!",
                     connectionBean.getHost(),
                     Thread.currentThread().getName());
-            return getAndRegisterNewConnection(connectionBean, clazz);
-        }
-        ConnectionManagerBean managerBean = threadManagerBeanMap.get(Thread.currentThread());
-        if (null != managerBean) {
-            return reuseConnection(connectionBean, managerBean, clazz);
+            borrowStatus = BorrowStatus.THREAD_HAS_NO_CONNECTION;
         } else {
-            Optional<T> connectionOption = borrowFromOtherThread(connectionBean);
-            if (connectionOption.isPresent()) {
-                return connectionOption.get();
-            }
-
-            if (threadManagerBeanMap.size() >= connectionManagerConfig.getMaxConnectionSize()) {
-                LOG.error("The host:{}, thread:{}' connection is {}, more than the limit:{}.",
-                        connectionBean.getHost(), Thread.currentThread(),
-                        threadManagerBeanMap.size(), connectionManagerConfig.getMaxConnectionSize());
-                throw new ConnectionException("Failed to borrow connection because of to much connections.");
-            }
-
-            return getAndRegisterNewConnection(connectionBean, clazz);
+            borrowStatus = BorrowStatus.THREAD_HAS_CONNECTION;
         }
+        return borrowStatus;
     }
 
     /**
@@ -174,18 +215,19 @@ public class BasicClientConnectionManager implements IConnectionManager {
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends IConnection> T reuseConnection(ConnectionBean connectionBean, ConnectionManagerBean managerBean, Class<T> clazz)
-            throws ConnectionException {
+    private <T extends IConnection> Optional<T> reuseConnection(ConnectionBean connectionBean,
+                                                                ConnectionManagerBean managerBean) {
         synchronized (managerBean.getLock()) {
-            if (managerBean.getConnectionClient() == null || !managerBean.getConnectionClient().isValid()) {
-                T connection = operationFactory.createConnection(connectionBean, connectionManagerConfig, clazz);
-                managerBean.setConnectionClient(connection);
+            IConnection connection = null;
+            if (managerBean.getConnectionClient() != null && managerBean.getConnectionClient().isValid()) {
+                managerBean.setConnectionBorrowed(true);
+                managerBean.setBorrowTime(Calendar.getInstance().getTimeInMillis());
+                LOG.debug("Reuse the connection for host {}, thread {}",
+                        connectionBean.getHost(), Thread.currentThread().getName());
+                connection = managerBean.getConnectionClient();
             }
-            managerBean.setConnectionBorrowed(true);
-            managerBean.setBorrowTime(Calendar.getInstance().getTimeInMillis());
-            LOG.debug("Reuse the connection for host {}, thread {}",
-                    connectionBean.getHost(), Thread.currentThread().getName());
-            return (T) managerBean.getConnectionClient();
+
+            return (Optional<T>) Optional.ofNullable(connection);
         }
     }
 
