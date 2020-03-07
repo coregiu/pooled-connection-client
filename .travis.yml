@@ -4,9 +4,8 @@ language: java
 
 addons:
   sonarcloud:
-    organization: "xvzhu"
-    token:
-      secure: "f08b0a2e9676a04be859421a6b8aa059604dcb67"
+    organization: ${SONAR_ORG}
+    token: ${SONAR_TOKEN}
 
 script:
   # the following command line builds the project, runs the tests with coverage and then execute the SonarCloud analysis
