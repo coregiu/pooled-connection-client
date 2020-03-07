@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/xvzhu/pooled-connection-client.svg?branch=master)](https://travis-ci.org/xvzhu/pooled-connection-client)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=xvzhu_pooled-connection-client&metric=alert_status)](https://sonarcloud.io/dashboard?id=xvzhu_pooled-connection-client)
-[![codecov](https://codecov.io/gh/xvzhu/connection-client/branch/master/graph/badge.svg)](https://codecov.io/gh/xvzhu/pooled-connection-client)
+[![codecov](https://codecov.io/gh/xvzhu/pooled-connection-client/branch/master/graph/badge.svg)](https://codecov.io/gh/xvzhu/pooled-connection-client)
 [![Language](https://img.shields.io/badge/language-java-blue.svg)](README.md)
 [![License](https://img.shields.io/badge/license-Apache2.0-brightgreen.svg)](LICENSE)
 
