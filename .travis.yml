@@ -6,7 +6,7 @@ addons:
   sonarcloud:
     organization: "xvzhu"
     token:
-      secure: "e8b30306d9c6c3ceb2b4121df4001f38f9cba3b7"
+      secure: "f08b0a2e9676a04be859421a6b8aa059604dcb67"
 
 script:
   # the following command line builds the project, runs the tests with coverage and then execute the SonarCloud analysis
