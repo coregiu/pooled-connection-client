@@ -4,16 +4,12 @@ language: java
 
 addons:
   sonarcloud:
-    organization: ${SONAR_ORG}
+    organization: "xvzhu"
     token:
-      secure: ${SONAR_TOKEN}
-
-jdk:
-  - oraclejdk8
+      secure: "e8b30306d9c6c3ceb2b4121df4001f38f9cba3b7"
 
 script:
-  # JaCoCo is used to have code coverage, the agent has to be activated
-  - mvn clean install
+  # the following command line builds the project, runs the tests with coverage and then execute the SonarCloud analysis
   - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent install sonar:sonar -Dsonar.projectKey=xvzhu_pooled-connection-client
 
 after_success:
