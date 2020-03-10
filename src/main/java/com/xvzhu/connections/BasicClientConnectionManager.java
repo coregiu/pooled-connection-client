@@ -104,7 +104,7 @@ public class BasicClientConnectionManager implements IConnectionManager {
                         break;
                     }
                 case OTHER_THREAD_HAS_CONNECTION:
-                    Optional<T> connectionOption = borrowFromOtherThread(connectionBean);
+                    Optional<T> connectionOption = borrowFromOtherThread(connectionBean, clazz);
                     if (connectionOption.isPresent()) {
                         return connectionOption.get();
                     } else {
@@ -232,14 +232,14 @@ public class BasicClientConnectionManager implements IConnectionManager {
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends IConnection> Optional<T> borrowFromOtherThread(ConnectionBean connectionBean) {
+    private <T extends IConnection> Optional<T> borrowFromOtherThread(ConnectionBean connectionBean, Class<T> clazz) {
         Map<Thread, ConnectionManagerBean> connectionMap = connections.get(connectionBean);
         T connectionClient = null;
         for (Map.Entry<Thread, ConnectionManagerBean> entry : connectionMap.entrySet()) {
             ConnectionManagerBean connectionManagerBean = entry.getValue();
-            if (isConnectionValid(connectionManagerBean)) {
+            if (isConnectionValid(connectionManagerBean, clazz)) {
                 synchronized (connectionManagerBean.getLock()) {
-                    if (isConnectionValid(connectionManagerBean)) {
+                    if (isConnectionValid(connectionManagerBean, clazz)) {
                         connectionClient = (T)connectionManagerBean.getConnectionClient();
                         connectionMap.remove(entry.getKey());
                         connectionManagerBean.setConnectionBorrowed(true);
@@ -252,10 +252,11 @@ public class BasicClientConnectionManager implements IConnectionManager {
         return Optional.ofNullable(connectionClient);
     }
 
-    private boolean isConnectionValid(ConnectionManagerBean connectionManagerBean) {
+    private <T extends IConnection> boolean isConnectionValid(ConnectionManagerBean connectionManagerBean, Class<T> clazz) {
         return !connectionManagerBean.isConnectionBorrowed()
                 && connectionManagerBean.getConnectionClient() != null
-                && connectionManagerBean.getConnectionClient().isValid();
+                && connectionManagerBean.getConnectionClient().isValid()
+                && clazz.isAssignableFrom(connectionManagerBean.getConnectionClient().getClass());
     }
 
     private <T extends IConnection> T getAndRegisterNewConnection(ConnectionBean connectionBean, Class<T> clazz)

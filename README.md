@@ -6,7 +6,7 @@
 
 
 # pooled connection client
-Supply basic and pooled management of connections, such as sftp, snmp and so on.
+Supply basic and pooled management of connections, such as sftp, shell and so on.
 
 Using common-pool2 as pool manager. Thread safety.
 
@@ -59,7 +59,7 @@ IConnectionManager manager = BasicClientConnectionManager.builder()
                 .setSchedulePeriodTimeMS(6000L)
                 .setConnectionTimeoutMs(60000)
                 .build();
-ConnectionBean connectionBean = new ConnectionBean("127.0.0.1", 22, "test", "test");getConnectionBean();
+ConnectionBean connectionBean = new ConnectionBean("127.0.0.1", 22, "test", "test");
 try {
     ISftpConnection sftpConnection = manager.borrowConnection(connectionBean, ISftpConnection.class);
     System.out.println(sftpConnection.currentDirectory());
@@ -73,7 +73,6 @@ try {
 
 ```java
 ConnectionBean connectionBean = new ConnectionBean("127.0.0.1", 22, "test", "test");
-ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
         IConnectionManager manager = PooledClientConnectionManager.builder()
                 .setBorrowMaxWaitTimeMS(8000)
                 .setAbandonedConfig(new AbandonedConfig())

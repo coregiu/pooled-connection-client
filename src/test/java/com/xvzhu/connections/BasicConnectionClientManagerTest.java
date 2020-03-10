@@ -9,6 +9,7 @@ import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.ConnectionManagerBean;
 import com.xvzhu.connections.apis.IConnectionManager;
 import com.xvzhu.connections.apis.protocol.ISftpConnection;
+import com.xvzhu.connections.apis.protocol.IShellConnection;
 import com.xvzhu.connections.data.ConnectionBeanBuilder;
 import com.xvzhu.connections.mockserver.SftpServer;
 import com.xvzhu.connections.sftp.SftpConnectionFactory;
@@ -303,5 +304,52 @@ public class BasicConnectionClientManagerTest {
             LOG.error("========================={},{}", (connectionManagerBeanMap.get(thread) == null), thread.getName());
             return connectionManagerBeanMap.get(thread) == null;
         };
+    }
+
+    @Test
+    public void should_borrow_shell_connection_when_type_is_shell() throws ConnectionException  {
+        IConnectionManager manager = BasicClientConnectionManager.builder()
+                .setAutoInspect(false)
+                .build();
+        ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
+        IShellConnection shellConnection = manager.borrowConnection(connectionBean, IShellConnection.class);
+        assertTrue(shellConnection.isValid());
+    }
+
+    @Test
+    public void should_borrow_new_connection_when_other_thread_has_not_same_type_connection() throws Exception {
+        IConnectionManager manager = BasicClientConnectionManager.builder()
+                .setAutoInspect(false)
+                .build();
+        ConnectionBean connectionBean = ConnectionBeanBuilder.builder().port(port).build().getConnectionBean();
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        final ISftpConnection[] sftpConnection = new ISftpConnection[1];
+        try {
+            Thread thread = new Thread(() -> {
+                try {
+                    sftpConnection[0] = manager.borrowConnection(connectionBean, ISftpConnection.class);
+                    manager.releaseConnection(connectionBean);
+                } catch (ConnectionException e) {
+                    LOG.error("Failed to borrow the first connection.");
+                } finally {
+                    countDownLatch.countDown();
+                }
+            });
+            thread.start();
+            countDownLatch.await();
+            IShellConnection shellConnection = manager.borrowConnection(connectionBean, IShellConnection.class);
+
+            await()
+                    .atMost(1, TimeUnit.SECONDS)
+                    .with()
+                    .pollDelay(10, TimeUnit.MILLISECONDS)
+                    .pollInterval(10, TimeUnit.MILLISECONDS)
+                    .until(isShutdown(fieldIn(BasicClientConnectionManager.class).ofType(Map.class).andWithName("connections").call(), connectionBean, thread));
+
+            assertNotSame(sftpConnection[0], shellConnection);
+        } finally {
+            manager.releaseConnection(connectionBean);
+            manager.closeConnection(connectionBean);
+        }
     }
 }

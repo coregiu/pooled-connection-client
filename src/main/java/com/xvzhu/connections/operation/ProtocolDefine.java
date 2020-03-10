@@ -21,11 +21,11 @@ public enum ProtocolDefine {
             "com.xvzhu.connections.sftp.SftpImpl",
             "com.xvzhu.connections.sftp.SftpConnectionFactory"),
     /**
-     * Snmp protocol define.
+     * Shell protocol define.
      */
-    SNMP("com.xvzhu.connections.apis.protocol.ISnmpConnection",
-            "com.xvzhu.connections.snmp.SnmpImpl",
-            "com.xvzhu.connections.snmp.SnmpConnectionFactory");
+    SHELL("com.xvzhu.connections.apis.protocol.IShellConnection",
+            "com.xvzhu.connections.shell.ShellImpl",
+            "com.xvzhu.connections.shell.ShellConnectionFactory");
     private String connectionType;
     private String connectionImpl;
     private String connectionFactory;
@@ -73,8 +73,8 @@ public enum ProtocolDefine {
         switch (connectionType) {
             case "com.xvzhu.connections.apis.protocol.ISftpConnection":
                 return Optional.of(SFTP);
-            case "com.xvzhu.connections.apis.protocol.ISnmpConnection":
-                return Optional.of(SNMP);
+            case "com.xvzhu.connections.apis.protocol.IShellConnection":
+                return Optional.of(SHELL);
             default:
                 return Optional.empty();
         }
