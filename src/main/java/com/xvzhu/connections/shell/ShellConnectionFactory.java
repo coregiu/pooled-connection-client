@@ -24,7 +24,6 @@ import org.slf4j.LoggerFactory;
  * @since Date : 2020-02-15 16:13
  */
 @Builder
-@Data
 @AllArgsConstructor
 public class ShellConnectionFactory extends BasePooledObjectFactory<IShellConnection> {
     private static final Logger LOG = LoggerFactory.getLogger(ShellConnectionFactory.class);

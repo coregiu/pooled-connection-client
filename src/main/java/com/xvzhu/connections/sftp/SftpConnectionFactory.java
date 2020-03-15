@@ -24,7 +24,6 @@ import org.slf4j.Logger;
  * @since Date : 2020-02-15 16:13
  */
 @Builder
-@Data
 @AllArgsConstructor
 public class SftpConnectionFactory extends BasePooledObjectFactory<ISftpConnection> {
     private static final Logger LOG = LoggerFactory.getLogger(SftpConnectionFactory.class);
