@@ -2,7 +2,7 @@
  * Copyright (c)  Xvzhu 2020.  All rights reserved.
  */
 
-package com.xvzhu.connections;
+package com.xvzhu.connections.apis;
 
 /**
  * The enum Borrow status.

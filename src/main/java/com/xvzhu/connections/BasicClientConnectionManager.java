@@ -4,6 +4,7 @@
 
 package com.xvzhu.connections;
 
+import com.xvzhu.connections.apis.BorrowStatus;
 import com.xvzhu.connections.apis.ConnectionBean;
 import com.xvzhu.connections.apis.ConnectionException;
 import com.xvzhu.connections.apis.ConnectionManagerConfig;
