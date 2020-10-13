@@ -13,7 +13,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jsch.version>0.1.55</jsch.version>
-        <junit.version>4.8.2</junit.version>
+        <junit.version>4.13.1</junit.version>
         <pool.version>2.6.1</pool.version>
         <slf4j.version>1.7.25</slf4j.version>
         <log4j.version>2.13.0</log4j.version>
