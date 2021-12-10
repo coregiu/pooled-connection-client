@@ -16,7 +16,7 @@
         <junit.version>4.8.2</junit.version>
         <pool.version>2.6.1</pool.version>
         <slf4j.version>1.7.25</slf4j.version>
-        <log4j.version>2.13.0</log4j.version>
+        <log4j.version>2.15.0</log4j.version>
         <lombok.version>1.18.6</lombok.version>
         <mina.version>2.1.3</mina.version>
         <jmockit.version>1.49</jmockit.version>
